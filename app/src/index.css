@@ -1,0 +1,51 @@
+:root {
+  /* Gradients */
+  --gradient-blue-purple: linear-gradient(135deg, #60A5FA 0%, #8B5CF6 100%);
+  --gradient-teal-green: linear-gradient(135deg, #34D399 0%, #059669 100%);
+  
+  /* Colors */
+  --color-bg-body: #F4F5F7;
+  --color-bg-paper: #FFFFFF;
+  --color-sidebar: #F9FAFB;
+  --color-border: #E5E7EB;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6B7280;
+  --color-purple: #8B5CF6;
+  --color-purple-light: #EDE9FE;
+  --color-green: #059669;
+  
+  /* Typography */
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background-color: var(--color-bg-body);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+}
+
+#root { height: 100vh; }
+
+/* Utility classes for gradient cards */
+.gradient-blue-purple {
+  background: var(--gradient-blue-purple);
+  color: #FFFFFF;
+}
+
+.gradient-teal-green {
+  background: var(--gradient-teal-green);
+  color: #FFFFFF;
+}
+
+/* Card shadows */
+.card-shadow {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}

@@ -1,0 +1,91 @@
+﻿
+C:\Users\coffm\Coffman Calendar\app\src\components\CalendarSelector.jsx
+  34:8  warning  React Hook useEffect has missing dependencies: 'currentUser.id', 'selected.length', and 'setUserCalendars'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\coffm\Coffman Calendar\app\src\hooks\useIdleTimer.js
+  64:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  62 |         if (!hasInitialized.current) {
+  63 |             hasInitialized.current = true;
+> 64 |             resetTimer();
+     |             ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  65 |         }
+  66 |
+  67 |         // Cleanup: remove listeners and clear timer  react-hooks/set-state-in-effect
+
+C:\Users\coffm\Coffman Calendar\app\src\hooks\useMediaSlideshow.js
+  55:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  53 |     useEffect(() => {
+  54 |         if (isActive && media.length > 0) {
+> 55 |             setCurrentIndex(Math.floor(Math.random() * media.length));
+     |             ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  56 |         }
+  57 |     }, [isActive, media.length]);
+  58 |                                                                                    react-hooks/set-state-in-effect
+  62:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  60 |     useEffect(() => {
+  61 |         if (!currentItem || currentItem.type !== 'video' || !isActive) {
+> 62 |             setVideoUrl(prev => prev === null ? prev : null);
+     |             ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  63 |             return;
+  64 |         }
+  65 |         setVideoUrl(prev => prev === currentItem.url ? prev : currentItem.url);  react-hooks/set-state-in-effect
+
+C:\Users\coffm\Coffman Calendar\app\src\modules\meals\AddMealDialog.jsx
+  33:24  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  31 |         if (!name.trim() && !selectedRecipe) return;
+  32 |
+> 33 |         const mealId = Date.now().toString();
+     |                        ^^^^^^^^^^ Cannot call impure function
+  34 |         const meal = tab === 0 && selectedRecipe
+  35 |             ? { ...selectedRecipe, id: mealId }
+  36 |             : { name, instructions };  react-hooks/purity
+
+C:\Users\coffm\Coffman Calendar\app\src\modules\tasks\hooks\useTasks.js
+  35:8  warning  React Hook useEffect has a missing dependency: 'selectedListId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\coffm\Coffman Calendar\app\src\modules\users\CalendarSyncPanel.jsx
+  37:8  warning  React Hook useEffect has missing dependencies: 'selectedIds.length', 'setUserCalendars', and 'user.id'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\coffm\Coffman Calendar\app\src\modules\users\contexts\GoogleAuthContext.jsx
+  117:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  115 |                 expiresAt: result.expiresAt,
+  116 |             });
+> 117 |             updateUserToken(result.userId, tokenJson);
+      |             ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  118 |         }
+  119 |     }, [updateUserToken]);
+  120 |  react-hooks/set-state-in-effect
+
+Γ£û 8 problems (5 errors, 3 warnings)
+

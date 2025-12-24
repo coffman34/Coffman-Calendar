@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Family Calendar Kiosk
+Comment=Launch Family Calendar in fullscreen Chromium
+Exec=sh -c 'sleep 5 && chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --disable-session-crashed-bubble http://localhost'
+Icon=chromium
+Terminal=false
+X-GNOME-Autostart-enabled=true
