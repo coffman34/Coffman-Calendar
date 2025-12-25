@@ -1,35 +1,34 @@
 /**
- * @fileoverview Unified Tasks View - Local with Optional Google Sync
+ * @fileoverview Family Tasks View - Single Gamified Task List
  * @module modules/tasks/TasksView
  * 
  * EDUCATIONAL NOTES FOR JUNIOR DEVELOPERS:
  * 
  * WHY THIS FILE EXISTS:
- * This view provides a unified task management interface.
- * All tasks are stored locally and earn XP/Gold when completed.
- * If the user has authorized Google Tasks, tasks ALSO sync to Google.
+ * This is a SINGLE unified task list for the entire family.
+ * Tasks here are gamified - completing them earns XP and Gold.
+ * The list is stored locally, but can be synced to a user's Google Tasks.
  * 
- * DESIGN PATTERN: Hybrid Storage
- * - Local tasks = source of truth for gamification
- * - Google Tasks = optional sync for cross-device access
+ * KEY DIFFERENCE FROM LISTS MODULE:
+ * - Tasks module = ONE list, shared by family, gamified
+ * - Lists module = MULTIPLE lists (Shopping, Google), not gamified
  */
 
 import React, { useState } from 'react';
 import {
     Box, Typography, Paper, List, CircularProgress, Alert,
-    Button, Fab, IconButton
+    Button, IconButton, Dialog, DialogContent
 } from '@mui/material';
 import AppCard from '../../components/AppCard';
 import AddIcon from '@mui/icons-material/Add';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useUser } from '../../modules/users/useUser';
-import { useGoogleAuth } from '../../modules/users/contexts/useGoogleAuth';
 import { useUI } from '../ui/useUI';
 import { useLocalTasks } from './hooks/useLocalTasks';
 import LocalTaskItem from './components/LocalTaskItem';
 import AddTaskModal from './components/AddTaskModal';
-import TaskSettingsPopover from './components/TaskSettingsPopover';
-import GoogleTaskList from './components/GoogleTaskList';
+import UserSelector from '../users/UserSelector';
+import PinDialog from '../../components/PinDialog';
 
 const TasksView = () => {
     // ========================================================================
@@ -38,9 +37,10 @@ const TasksView = () => {
 
     const { currentUser } = useUser();
     const { showNotification } = useUI();
-    const { getSelectedTaskLists } = useGoogleAuth();
 
-    // All tasks are local with XP/Gold
+    // JUNIOR DEV NOTE:
+    // We pass null for userId because this is a FAMILY task list, not per-user.
+    // The gamification happens when ANY user completes a task.
     const {
         localTasks,
         loading,
@@ -48,14 +48,15 @@ const TasksView = () => {
         toggleLocalTask,
         addLocalTask,
         deleteLocalTask
-    } = useLocalTasks(currentUser?.id, showNotification);
+    } = useLocalTasks(null, showNotification); // null = family-wide tasks
 
-    // Modal/Popover state
+    // Modal state
     const [addModalOpen, setAddModalOpen] = useState(false);
-    const [settingsAnchor, setSettingsAnchor] = useState(null);
 
-    // Get subscribed Google Task Lists for this user
-    const subscribedLists = currentUser ? getSelectedTaskLists(currentUser.id) || [] : [];
+    // Settings/Sync flow state
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [settingsStep, setSettingsStep] = useState('USER'); // 'USER' | 'PIN' | 'OPTIONS'
+    const [selectedUser, setSelectedUser] = useState(null);
 
     // ========================================================================
     // HANDLERS
@@ -65,28 +66,41 @@ const TasksView = () => {
         await addLocalTask(taskData);
     };
 
-    // ========================================================================
-    // RENDER GUARDS
-    // ========================================================================
+    // --- Settings/Sync Flow ---
 
-    if (!currentUser) {
-        return (
-            <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                <Typography>Please select a user profile.</Typography>
-            </Box>
-        );
-    }
+    const handleGearClick = () => {
+        setSettingsStep('USER');
+        setSelectedUser(null);
+        setSettingsOpen(true);
+    };
+
+    const handleUserSelect = (user) => {
+        setSelectedUser(user);
+        if (user.isParent && user.pin) {
+            setSettingsStep('PIN');
+        } else {
+            setSettingsStep('OPTIONS');
+        }
+    };
+
+    const handlePinSuccess = () => {
+        setSettingsStep('OPTIONS');
+        return true;
+    };
+
+    const handleSync = () => {
+        // TODO: Implement actual sync to Google Tasks
+        showNotification(`Syncing tasks to ${selectedUser.name}'s Google account...`, 'info');
+        setSettingsOpen(false);
+    };
 
     // ========================================================================
     // RENDER
     // ========================================================================
 
-    // JUNIOR DEV NOTE: 
-    // Gear icon opens TaskSettingsPopover to subscribe to Google Task Lists
-    // This lets users sync their gamified tasks with Google
     const HeaderActions = (
         <Box display="flex" gap={1}>
-            <IconButton onClick={(e) => setSettingsAnchor(e.currentTarget)}>
+            <IconButton onClick={handleGearClick}>
                 <SettingsIcon />
             </IconButton>
             <Button
@@ -102,7 +116,7 @@ const TasksView = () => {
 
     return (
         <AppCard
-            title={`${currentUser.name}'s Tasks`}
+            title="Family Tasks"
             action={HeaderActions}
             sx={{ height: '100%' }}
         >
@@ -115,8 +129,6 @@ const TasksView = () => {
                 )}
 
                 {/* Main Task List */}
-                {/* JUNIOR DEV NOTE: We use white background and elevation here to 
-                    make this list look like a 'card' sitting on top of the themed background. */}
                 <Paper
                     elevation={1}
                     sx={{
@@ -124,7 +136,7 @@ const TasksView = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         overflow: 'hidden',
-                        bgcolor: '#FFFFFF', // Explicit white
+                        bgcolor: '#FFFFFF',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                         borderRadius: 2
                     }}
@@ -162,16 +174,6 @@ const TasksView = () => {
                         )}
                     </List>
                 </Paper>
-
-                {/* Subscribed Google Task Lists */}
-                {/* JUNIOR DEV NOTE: These are Google lists the user has subscribed to via settings */}
-                {subscribedLists.map(list => (
-                    <GoogleTaskList
-                        key={list.id}
-                        list={list}
-                        userId={currentUser.id}
-                    />
-                ))}
             </Box>
 
             {/* Add Task Modal */}
@@ -179,16 +181,59 @@ const TasksView = () => {
                 open={addModalOpen}
                 onClose={() => setAddModalOpen(false)}
                 onSave={handleAddTask}
-                currentUserId={currentUser.id}
+                currentUserId={currentUser?.id}
             />
 
-            {/* Settings Popover - Sync to Google Task Lists */}
-            <TaskSettingsPopover
-                open={Boolean(settingsAnchor)}
-                anchorEl={settingsAnchor}
-                onClose={() => setSettingsAnchor(null)}
-                currentUserId={currentUser.id}
-            />
+            {/* Settings Dialog - Profile Selection → PIN → Sync Options */}
+            <Dialog
+                open={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                fullWidth
+                maxWidth="sm"
+                PaperProps={{ sx: { borderRadius: 3, p: 2, minHeight: '50vh' } }}
+            >
+                <DialogContent>
+                    {settingsStep === 'USER' && (
+                        <UserSelector
+                            title="Who is syncing tasks?"
+                            onSelect={handleUserSelect}
+                            showGoogle={false}
+                        />
+                    )}
+
+                    {settingsStep === 'PIN' && (
+                        <PinDialog
+                            title={`Enter PIN for ${selectedUser?.name}`}
+                            onSuccess={handlePinSuccess}
+                            autoSubmit={true}
+                        />
+                    )}
+
+                    {settingsStep === 'OPTIONS' && (
+                        <Box textAlign="center" py={4}>
+                            <Typography variant="h6" gutterBottom>
+                                Sync Settings
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                                Sync the family task list to {selectedUser?.name}'s Google Tasks?
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                onClick={handleSync}
+                                sx={{ mr: 2 }}
+                            >
+                                Sync to Google
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => setSettingsOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                        </Box>
+                    )}
+                </DialogContent>
+            </Dialog>
         </AppCard>
     );
 };
