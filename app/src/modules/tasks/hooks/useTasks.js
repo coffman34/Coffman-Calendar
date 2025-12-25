@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchTaskLists, fetchTasks, createTask, updateTask, deleteTask } from '../../../services/googleTasks';
 
-export const useTasks = (currentUser, getCurrentUserToken, connected, updateUserToken, showNotification) => {
+export const useTasks = (currentUser, getToken, connected, updateUserToken, showNotification) => {
     const [taskLists, setTaskLists] = useState([]);
     const [selectedListId, setSelectedListId] = useState('');
     const [tasks, setTasks] = useState([]);
@@ -9,10 +9,11 @@ export const useTasks = (currentUser, getCurrentUserToken, connected, updateUser
     const [error, setError] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-    const token = getCurrentUserToken();
+    // JUNIOR DEV NOTE: We removed the sync call `const token = getToken()` 
+    // because now getToken is async!
 
     useEffect(() => {
-        if (!connected || !token) {
+        if (!connected) {
             setTaskLists([]);
             setTasks([]);
             return;
@@ -21,6 +22,13 @@ export const useTasks = (currentUser, getCurrentUserToken, connected, updateUser
             setLoading(true);
             setError(null);
             try {
+                // Async token fetch
+                const token = await getToken();
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
+
                 const lists = await fetchTaskLists(token);
                 setTaskLists(lists);
                 if (lists.length > 0 && !selectedListId) setSelectedListId(lists[0].id);
@@ -32,14 +40,18 @@ export const useTasks = (currentUser, getCurrentUserToken, connected, updateUser
             }
         };
         loadLists();
-    }, [connected, token, refreshTrigger, currentUser?.id, setSelectedListId, updateUserToken]);
+    }, [connected, refreshTrigger, currentUser?.id, setSelectedListId, updateUserToken, getToken]); // Added getToken
 
     useEffect(() => {
-        if (!selectedListId || !token) return;
+        if (!selectedListId || !connected) return;
+
         const loadTasks = async () => {
             setLoading(true);
             setError(null);
             try {
+                const token = await getToken();
+                if (!token) return;
+
                 const fetchedTasks = await fetchTasks(token, selectedListId);
                 setTasks(fetchedTasks || []);
             } catch (err) {
@@ -50,10 +62,13 @@ export const useTasks = (currentUser, getCurrentUserToken, connected, updateUser
             }
         };
         loadTasks();
-    }, [selectedListId, token, refreshTrigger, currentUser?.id, updateUserToken]);
+    }, [selectedListId, connected, refreshTrigger, currentUser?.id, updateUserToken, getToken]);
 
     const handleAddTask = async (title) => {
         try {
+            const token = await getToken();
+            if (!token) throw new Error('No token');
+
             const newTask = await createTask(token, selectedListId, { title });
             setTasks(prev => [newTask, ...prev]);
             showNotification('Task added', 'success');
@@ -70,6 +85,9 @@ export const useTasks = (currentUser, getCurrentUserToken, connected, updateUser
         const newStatus = task.status === 'completed' ? 'needsAction' : 'completed';
         setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
         try {
+            const token = await getToken();
+            if (!token) throw new Error('No token');
+
             await updateTask(token, selectedListId, task.id, { status: newStatus, title: task.title });
             showNotification(newStatus === 'completed' ? 'Task completed' : 'Task reopened', 'info');
         } catch (err) {
@@ -83,6 +101,9 @@ export const useTasks = (currentUser, getCurrentUserToken, connected, updateUser
         const previousTasks = [...tasks];
         setTasks(prev => prev.filter(t => t.id !== taskId));
         try {
+            const token = await getToken();
+            if (!token) throw new Error('No token');
+
             await deleteTask(token, selectedListId, taskId);
             showNotification('Task deleted', 'success');
         } catch (err) {

@@ -1,0 +1,13 @@
+
+# Secrets
+client_secret.json
+storage/auth_tokens.json
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Node
+node_modules/

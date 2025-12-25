@@ -41,7 +41,8 @@ export default function CalendarProvider({ children }) {
     } = useCalendarEvents(
         users,
         googleTokens,
-        selectedCalendars
+        selectedCalendars,
+        useUser().getFreshToken // Pass the async token getter
     );
 
     // 3. Initialize Write-side operations (Mutations)
@@ -51,7 +52,7 @@ export default function CalendarProvider({ children }) {
         updateEvent,
         removeEvent
     } = useEventMutations(
-        getCurrentUserToken,
+        useUser().getFreshCurrentUserToken, // Use Async/Secure token getter
         showNotification,
         fetchEvents // Pass fetchEvents so it auto-refreshes after a mutation
     );

@@ -45,6 +45,7 @@ import './App.css';
  * @returns {React.ReactElement} The application
  */
 function App() {
+  console.log('[APP] Rendering App component...');
   return (
     <AppProviders>
       <ModuleRouter />

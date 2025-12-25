@@ -94,8 +94,12 @@ class GoogleApiClient {
         // JUNIOR DEV NOTE: Why spread operator (...)?
         // We're merging the default headers with any headers the caller provides.
         // This ensures we always include Authorization, but allow overrides.
+        const token = typeof this.accessToken === 'function'
+            ? await this.accessToken()
+            : this.accessToken;
+
         const headers = {
-            'Authorization': `Bearer ${this.accessToken}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
             ...options.headers,
         };

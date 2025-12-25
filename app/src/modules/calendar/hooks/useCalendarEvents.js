@@ -17,7 +17,7 @@
  * React hooks let us extract stateful logic into reusable functions.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchCalendarEvents } from '../../../services/googleCalendar';
 
 /**
@@ -42,7 +42,7 @@ import { fetchCalendarEvents } from '../../../services/googleCalendar';
  * @param {Object} selectedCalendars - Map of userId to calendar IDs
  * @returns {Object} { events, loading, error, fetchEvents }
  */
-export const useCalendarEvents = (users, googleTokens, selectedCalendars) => {
+export const useCalendarEvents = (users, googleTokens = {}, selectedCalendars, getFreshToken) => {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -57,9 +57,9 @@ export const useCalendarEvents = (users, googleTokens, selectedCalendars) => {
     const fetchEvents = useCallback(async () => {
         console.log('📅 Fetching calendar events...');
 
-        // Early return if no tokens
-        if (Object.keys(googleTokens).length === 0) {
-            console.warn('⚠️ No Google tokens - skipping event fetch');
+        // Early return if no users
+        if (users.length === 0) {
+            console.warn('⚠️ No users - skipping event fetch');
             setEvents([]);
             return;
         }
@@ -67,9 +67,6 @@ export const useCalendarEvents = (users, googleTokens, selectedCalendars) => {
         setLoading(true);
         setError(null);
 
-        // Use a Map to deduplicate events by ID
-        // JUNIOR DEV NOTE: Why Map instead of array?
-        // Maps are faster for lookups. We can check if an event ID exists in O(1) time.
         const eventsMap = new Map();
 
         // Fetch events from 6 months ago to 12 months in the future
@@ -82,18 +79,33 @@ export const useCalendarEvents = (users, googleTokens, selectedCalendars) => {
         try {
             // Fetch events for each user
             for (const user of users) {
-                const token = googleTokens[user.id];
+                if (!user) continue;
 
-                if (!token) {
+                // We still check googleTokens for quick "is connected" check
+                if (!googleTokens[user.id]) {
                     console.log(`⏭️ Skipping ${user.name} - no token`);
                     continue;
                 }
 
-                const calendars = selectedCalendars[user.id] || ['primary'];
+                const calendars = selectedCalendars[user.id] || [];
+
+                // Skip users with no calendars selected
+                if (calendars.length === 0) {
+                    console.log(`⏭️ Skipping ${user.name} - no calendars selected`);
+                    continue;
+                }
+
                 console.log(`🔍 Fetching for ${user.name} from:`, calendars);
 
                 try {
-                    const userEvents = await fetchCalendarEvents(token, startDate, endDate, calendars);
+                    // Create a token fetcher for this specific user
+                    const tokenFetcher = async () => {
+                        const token = await getFreshToken(user.id);
+                        if (!token) throw new Error('Failed to refresh token');
+                        return token;
+                    };
+
+                    const userEvents = await fetchCalendarEvents(tokenFetcher, startDate, endDate, calendars);
                     console.log(`✅ Fetched ${userEvents.length} events for ${user.name}`);
 
                     // Add events to map, tagging with source user
@@ -126,12 +138,33 @@ export const useCalendarEvents = (users, googleTokens, selectedCalendars) => {
         } finally {
             setLoading(false);
         }
-    }, [users, googleTokens, selectedCalendars]);
+    }, [users, googleTokens, selectedCalendars, getFreshToken]);
 
-    return {
-        events,
-        loading,
-        error,
-        fetchEvents,
-    };
+    /**
+     * Filter events when calendar selection changes
+     * 
+     * JUNIOR DEV NOTE: Why use a custom event instead of just re-fetching?
+     * Re-fetching is slow (network request). By filtering the existing events
+     * immediately, we provide instant UI feedback. The refetch will still
+     * happen via the dependency chain, but this gives users immediate feedback.
+     */
+    useEffect(() => {
+        const handleCalendarChange = () => {
+            // Build a flat list of all currently selected calendar IDs
+            const allSelectedCalendars = Object.values(selectedCalendars).flat();
+
+            // Filter out events from calendars no longer selected
+            setEvents(prev => prev.filter(event =>
+                // Keep events that either:
+                // 1. Don't have a calendar ID (local events)
+                // 2. Are from a currently selected calendar
+                !event.originalCalendarId || allSelectedCalendars.includes(event.originalCalendarId)
+            ));
+        };
+
+        window.addEventListener('calendars-changed', handleCalendarChange);
+        return () => window.removeEventListener('calendars-changed', handleCalendarChange);
+    }, [selectedCalendars]);
+
+    return { events, loading, error, fetchEvents };
 };

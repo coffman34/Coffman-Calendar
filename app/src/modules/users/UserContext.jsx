@@ -68,6 +68,7 @@ const UnifiedContextProvider = ({ children }) => {
         // 3. Add helper functions for legacy compatibility
         // Some older components expect specifically named functions.
         getCurrentUserToken: () => authContext.getUserToken(profileContext.currentUser?.id),
+        getFreshCurrentUserToken: () => authContext.getFreshToken(profileContext.currentUser?.id),
         isUserConnected: (userId) => authContext.isUserConnected(userId),
         updateUserToken: authContext.updateUserToken,
         getUserCalendars: authContext.getUserCalendars,

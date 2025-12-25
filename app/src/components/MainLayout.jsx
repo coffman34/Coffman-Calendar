@@ -52,13 +52,16 @@ const MainLayout = ({ children, onModuleSelect, currentModule }) => {
     // ========================================================================
 
     /**
-     * Idle timer for screensaver
+     * Idle timer for screensaver with wake delay protection
      * 
      * JUNIOR DEV NOTE: Why 30000ms?
      * 30 seconds (30,000 milliseconds) of inactivity triggers the screensaver.
-     * This is configurable - could be moved to constants.js
+     * 
+     * DEFENSIVE UX: isWaking
+     * When waking from screensaver, isWaking is true for 500ms.
+     * This prevents the wake touch from accidentally clicking UI elements.
      */
-    const { isIdle, setIdle } = useIdleTimer(30000);
+    const { isIdle, setIdle, isWaking } = useIdleTimer(30000);
 
     /**
      * Detect device orientation
@@ -113,6 +116,31 @@ const MainLayout = ({ children, onModuleSelect, currentModule }) => {
         >
             {/* Screensaver overlay (shown when idle) */}
             <Screensaver isIdle={isIdle} />
+
+            {/* 
+             * DEFENSIVE UX: Wake Delay Overlay
+             * 
+             * WHAT IT DOES:
+             * Blocks all touch/click input for 500ms after waking from screensaver.
+             * 
+             * WHY:
+             * The touch that dismisses the screensaver would otherwise immediately
+             * trigger a click on whatever UI element is beneath it.
+             * 
+             * HOW:
+             * This invisible overlay captures all pointer events during isWaking=true.
+             */}
+            {isWaking && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 9998, // Just below screensaver (9999)
+                        pointerEvents: 'all',
+                        cursor: 'default',
+                    }}
+                />
+            )}
 
             {/* Sidebar Navigation (landscape only) */}
             {!isPortrait && (

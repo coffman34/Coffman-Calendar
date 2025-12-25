@@ -51,7 +51,7 @@ export const useEventMutations = (getCurrentUserToken, showNotification, refresh
      * @throws {Error} If creation fails
      */
     const addEvent = async (eventData) => {
-        const token = getCurrentUserToken();
+        const token = await getCurrentUserToken();
 
         if (!token) {
             showNotification('Please connect your Google account first', 'warning');
@@ -79,7 +79,7 @@ export const useEventMutations = (getCurrentUserToken, showNotification, refresh
      * @throws {Error} If update fails
      */
     const updateEvent = async (calendarId, eventId, eventData) => {
-        const token = getCurrentUserToken();
+        const token = await getCurrentUserToken();
 
         if (!token) {
             showNotification('Please connect your Google account first', 'warning');
@@ -106,7 +106,7 @@ export const useEventMutations = (getCurrentUserToken, showNotification, refresh
      * @throws {Error} If deletion fails
      */
     const removeEvent = async (calendarId, eventId) => {
-        const token = getCurrentUserToken();
+        const token = await getCurrentUserToken();
 
         if (!token) {
             showNotification('Please connect your Google account first', 'warning');

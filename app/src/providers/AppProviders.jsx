@@ -29,6 +29,8 @@ import UserProvider from '../modules/users/UserContext';
 import CalendarProvider from '../modules/calendar/CalendarContext';
 import MealCategoryProvider from '../modules/meals/MealCategoryContext';
 import MealProvider from '../modules/meals/MealContext';
+import { ShoppingListProvider } from '../modules/meals/contexts/ShoppingListContext';
+import { RecipePreferencesProvider } from '../modules/meals/contexts/RecipePreferencesContext';
 
 /**
  * App Providers Component
@@ -41,10 +43,12 @@ import MealProvider from '../modules/meals/MealContext';
  * 1. UI (notifications, snackbars) - Used by everything
  * 2. Theme - Visual styling
  * 3. Meal Categories - Meal data structure
- * 4. Meals - Meal planning
- * 5. PIN - Security layer
- * 6. Users - User profiles, auth, sync
- * 7. Calendar - Calendar events
+ * 4. Recipe Preferences - User preferences for meals
+ * 5. Meals - Meal planning (uses preferences)
+ * 6. Shopping List - Derived from meals
+ * 7. PIN - Security layer
+ * 8. Users - User profiles, auth, sync
+ * 9. Calendar - Calendar events (uses users)
  * 
  * JUNIOR DEV NOTE: Why does order matter?
  * Inner providers can use outer providers, but not vice versa.
@@ -53,36 +57,29 @@ import MealProvider from '../modules/meals/MealContext';
  * @param {Object} props
  * @param {React.ReactNode} props.children - App content
  */
+// Log provider initialization
 export const AppProviders = ({ children }) => {
+    console.log('[PROVIDERS] Initializing AppProviders...');
     return (
         <UIProvider>
             <ThemeProvider>
                 <MealCategoryProvider>
-                    <MealProvider>
-                        <PinProvider>
-                            <UserProvider>
-                                <CalendarProvider>
-                                    {/* Material-UI CSS reset */}
-                                    <CssBaseline />
-                                    {children}
-                                </CalendarProvider>
-                            </UserProvider>
-                        </PinProvider>
-                    </MealProvider>
+                    <RecipePreferencesProvider>
+                        <MealProvider>
+                            <ShoppingListProvider>
+                                <PinProvider>
+                                    <UserProvider>
+                                        <CalendarProvider>
+                                            <CssBaseline />
+                                            {children}
+                                        </CalendarProvider>
+                                    </UserProvider>
+                                </PinProvider>
+                            </ShoppingListProvider>
+                        </MealProvider>
+                    </RecipePreferencesProvider>
                 </MealCategoryProvider>
             </ThemeProvider>
         </UIProvider>
     );
 };
-
-/**
- * REFACTORING NOTE:
- * 
- * Before: All providers nested in App.jsx (hard to read)
- * After: Providers composed here (clean separation)
- * 
- * To add a new provider:
- * 1. Import it at the top
- * 2. Add it to the nesting (consider the order!)
- * 3. Document why it's in that position
- */

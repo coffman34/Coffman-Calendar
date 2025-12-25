@@ -23,11 +23,8 @@ const CalendarSyncPanel = ({ user }) => {
             try {
                 const list = await fetchCalendarList(token);
                 setCalendars(list);
-                // Auto-select primary calendar if none selected
-                if (selectedIds.length === 0) {
-                    const primary = list.find(c => c.primary);
-                    if (primary) setUserCalendars(user.id, [primary.id]);
-                }
+                // REMOVED: Auto-select primary calendar
+                // User explicitly wants "no calendars" to mean "no events synced"
             } catch (err) {
                 console.error("Calendar fetch error:", err);
                 setError(err.message || 'Failed to load calendars');

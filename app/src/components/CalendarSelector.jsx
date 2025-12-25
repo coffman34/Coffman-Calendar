@@ -3,27 +3,39 @@ import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText,
 import { fetchCalendarList } from '../services/googleCalendar';
 import { useUser } from '../modules/users/useUser';
 
-const CalendarSelector = ({ token }) => {
-    const { currentUser, getUserCalendars, setUserCalendars } = useUser();
+/**
+ * CalendarSelector - Lets users pick which calendars to sync
+ * 
+ * JUNIOR DEV NOTE: We use getFreshToken instead of a raw token prop
+ * because we need a guaranteed valid token for API calls. The raw
+ * googleTokens object contains JSON strings that may be expired.
+ */
+const CalendarSelector = ({ userId }) => {
+    const { currentUser, getUserCalendars, setUserCalendars, getFreshToken } = useUser();
     const [calendars, setCalendars] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const selected = getUserCalendars(currentUser?.id) || [];
+    const targetUserId = userId || currentUser?.id;
+    const selected = getUserCalendars(targetUserId) || [];
 
     useEffect(() => {
-        if (!token) return;
+        if (!targetUserId) return;
 
         const load = async () => {
             setLoading(true);
+            setError(null);
             try {
+                // Get a fresh, valid token
+                const token = await getFreshToken(targetUserId);
+                if (!token) {
+                    setError('Not connected to Google');
+                    return;
+                }
                 const list = await fetchCalendarList(token);
                 setCalendars(list);
-                // If no selection saved, default to primary
-                if (selected.length === 0 && list.length > 0) {
-                    const primary = list.find(c => c.primary)?.id || list[0].id;
-                    setUserCalendars(currentUser.id, [primary]);
-                }
+                // REMOVED: Auto-select primary calendar
+                // User explicitly wants "no calendars" to mean "no events synced"
             } catch (e) {
                 setError(e.message);
             } finally {
@@ -31,12 +43,12 @@ const CalendarSelector = ({ token }) => {
             }
         };
         load();
-    }, [token]);
+    }, [targetUserId, getFreshToken]);
 
     const handleChange = (event) => {
         const value = event.target.value;
         const newSelected = typeof value === 'string' ? value.split(',') : value;
-        setUserCalendars(currentUser.id, newSelected);
+        setUserCalendars(targetUserId, newSelected);
     };
 
     if (loading) return <CircularProgress size={20} />;

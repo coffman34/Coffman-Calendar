@@ -56,6 +56,9 @@ const SettingsView = () => {
     const [changePinOpen, setChangePinOpen] = useState(false);
     const [newPin, setNewPin] = useState('');
 
+    // Reboot confirmation dialog state
+    const [rebootDialogOpen, setRebootDialogOpen] = useState(false);
+
     if (!isUnlocked) {
         return <PinDialog onSuccess={verifyPin} title="Enter PIN to access Settings" />;
     }
@@ -95,11 +98,8 @@ const SettingsView = () => {
                             <Button
                                 variant="contained"
                                 color="error"
-                                onClick={() => {
-                                    if (window.confirm('Reboot the kiosk now?')) {
-                                        fetch('/api/system/reboot', { method: 'POST' });
-                                    }
-                                }}
+                                onClick={() => setRebootDialogOpen(true)}
+                                sx={{ minHeight: 44 }}
                             >
                                 Reboot Kiosk
                             </Button>
@@ -144,7 +144,7 @@ const SettingsView = () => {
                             <GoogleConnectButton userId={selectedUser.id} />
                             {isConnected && (
                                 <>
-                                    <CalendarSelector token={googleTokens[selectedUser.id]} />
+                                    <CalendarSelector userId={selectedUser.id} />
                                     <Typography variant="caption" color="text.secondary" mt={2} display="block">Shared calendars will appear for all family members.</Typography>
                                 </>
                             )}
@@ -186,6 +186,28 @@ const SettingsView = () => {
                 <DialogActions>
                     <Button onClick={() => setChangePinOpen(false)}>Cancel</Button>
                     <Button onClick={handleChangePin} variant="contained" disabled={newPin.length !== 4}>Save</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Reboot Confirmation Dialog - Touch-friendly replacement for window.confirm */}
+            <Dialog open={rebootDialogOpen} onClose={() => setRebootDialogOpen(false)}>
+                <DialogTitle>Reboot Kiosk?</DialogTitle>
+                <DialogContent>
+                    <Typography>Are you sure you want to reboot the kiosk device? The display will go dark for a moment.</Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <Button onClick={() => setRebootDialogOpen(false)} sx={{ minHeight: 44 }}>Cancel</Button>
+                    <Button
+                        onClick={() => {
+                            setRebootDialogOpen(false);
+                            fetch('/api/system/reboot', { method: 'POST' });
+                        }}
+                        variant="contained"
+                        color="error"
+                        sx={{ minHeight: 44 }}
+                    >
+                        Reboot
+                    </Button>
                 </DialogActions>
             </Dialog>
         </Box>

@@ -31,14 +31,14 @@ import TaskInput from './components/TaskInput';
 import TaskItem from './components/TaskItem';
 
 const TasksView = () => {
-    const { currentUser, getCurrentUserToken, isUserConnected, updateUserToken } = useUser();
+    const { currentUser, getFreshCurrentUserToken, isUserConnected, updateUserToken } = useUser();
     const { showNotification } = useUI();
     const connected = isUserConnected(currentUser?.id);
 
     const {
         taskLists, selectedListId, setSelectedListId, tasks, loading, error, setError,
         setRefreshTrigger, handleAddTask, handleToggleTask, handleDeleteTask
-    } = useTasks(currentUser, getCurrentUserToken, connected, updateUserToken, showNotification);
+    } = useTasks(currentUser, getFreshCurrentUserToken, connected, updateUserToken, showNotification);
 
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [addingTask, setAddingTask] = useState(false);

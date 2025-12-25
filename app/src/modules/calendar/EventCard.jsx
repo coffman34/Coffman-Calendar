@@ -1,5 +1,6 @@
 import React from 'react';
 import { Paper, Box, Typography, Chip, IconButton } from '@mui/material';
+import { motion } from 'framer-motion';
 
 // Color tag mapping (matches Google Calendar colorId)
 const COLOR_TAGS = {

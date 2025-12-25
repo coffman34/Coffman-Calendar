@@ -1,5 +1,5 @@
 /**
- * @fileoverview Navigation item component
+ * @fileoverview Navigation item component with defensive UX
  * @module components/navigation/NavItem
  * 
  * EDUCATIONAL NOTES FOR JUNIOR DEVELOPERS:
@@ -8,13 +8,17 @@
  * Each navigation button has the same structure (icon + label).
  * Instead of duplicating this code, we create a reusable component.
  * 
+ * DEFENSIVE UX FEATURE: Throttled Clicks
+ * We throttle click handlers to prevent rapid-tap issues on kiosk.
+ * 
  * DESIGN PATTERN: Presentational Component
  * This component only handles presentation (how it looks).
  * It doesn't know about routing or state - just displays what it's given.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
+import { createThrottledHandler } from '../../utils/debounce';
 
 /**
  * Navigation Item Component
@@ -27,6 +31,9 @@ import { Box, Typography } from '@mui/material';
  * - Testable in isolation
  * - Styling in one place
  * 
+ * DEFENSIVE UX:
+ * Click handler is throttled to 300ms to prevent double-taps.
+ * 
  * @param {Object} props
  * @param {Object} props.item - Nav item { id, label, icon }
  * @param {boolean} props.isActive - Whether this item is currently selected
@@ -35,9 +42,23 @@ import { Box, Typography } from '@mui/material';
 const NavItem = ({ item, isActive, onClick }) => {
     const Icon = item.icon;
 
+    /**
+     * Throttled click handler
+     * 
+     * JUNIOR DEV NOTE: Why useMemo?
+     * We need a stable reference to the throttled handler.
+     * Without useMemo, a new throttle would be created on each render,
+     * resetting the throttle timer and defeating the purpose.
+     */
+    const handleClick = useMemo(
+        () => createThrottledHandler(onClick, 300),
+        [onClick]
+    );
+
     return (
         <Box
-            onClick={onClick}
+            onClick={handleClick}
+            data-testid={`nav-${item.id}`}
             sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -45,6 +66,7 @@ const NavItem = ({ item, isActive, onClick }) => {
                 justifyContent: 'center',
                 p: 1,
                 minWidth: 64,
+                minHeight: 44, // Minimum touch target (44dp)
                 cursor: 'pointer',
                 borderRadius: 2,
                 // Active state styling

@@ -66,30 +66,65 @@ export function GoogleAuthProvider({ children }) {
 
         try {
             const parsed = JSON.parse(tokenData);
-            // IMPURE CHECK FIX: We check validity at the time of call.
-            // Avoid calling Date.now() in the render phase.
-            if (Date.now() > parsed.expiresAt) {
-                updateUserToken(userId, null);
-                return null;
-            }
+            // JUNIOR DEV NOTE: We NO LONGER check expiration here.
+            // We let the API client handle 401s and refresh.
+            // If we returned null here, the UI would flicker to "disconnected".
             return parsed.accessToken;
         } catch (error) {
             console.error('Failed to parse token:', error);
             return null;
         }
+    }, [googleTokens]);
+
+    /**
+     * Async function to get a guaranteed valid token (refreshed if needed)
+     */
+    const getFreshToken = useCallback(async (userId) => {
+        // We import this dynamically or rely on the imported service
+        // using the logic we wrote in googleAuth.js
+        const { getStoredToken } = await import('../../../services/googleAuth');
+        const token = await getStoredToken(userId);
+
+        // If refresh happened, update our local state so UI reflects new expiry
+        if (token) {
+            // We don't have the full token object here easily to update state purely,
+            // but storeToken in googleAuth.js updates localStorage.
+            // We should sync state from localStorage.
+            const { getToken: getRawToken } = await import('../../../services/utils/tokenManager');
+            const raw = getRawToken(userId);
+            if (raw !== googleTokens[userId]) {
+                updateUserToken(userId, raw);
+            }
+        } else {
+            // Token is truly dead (refresh failed)
+            updateUserToken(userId, null);
+        }
+
+        return token;
     }, [googleTokens, updateUserToken]);
 
-    /** Checks if a user has a connected account */
     const isUserConnected = useCallback((userId) => {
-        return getUserToken(userId) !== null;
-    }, [getUserToken]);
+        // Just check if we have ANY token data
+        return !!googleTokens[userId];
+    }, [googleTokens]);
 
     // 3. Data Operations
 
     const getUserCalendars = useCallback((userId) => selectedCalendars[userId] || [], [selectedCalendars]);
 
+    /**
+     * Updates selected calendars for a user
+     * 
+     * JUNIOR DEV NOTE: We dispatch a CustomEvent here so that the
+     * CalendarContext can immediately filter out events from unselected
+     * calendars, providing instant UI feedback instead of waiting for refetch.
+     */
     const setUserCalendars = useCallback((userId, calendars) => {
         setSelectedCalendars(prev => ({ ...prev, [userId]: calendars }));
+        // Notify calendar module to clear stale events immediately
+        window.dispatchEvent(new CustomEvent('calendars-changed', {
+            detail: { userId, calendars }
+        }));
     }, []);
 
     const getUserPhotos = useCallback((userId) => userPhotos[userId] || [], [userPhotos]);
@@ -105,17 +140,26 @@ export function GoogleAuthProvider({ children }) {
 
     /** Handle OAuth redirect callback on app load */
     useEffect(() => {
+        // CRITICAL: Set flag BEFORE async call to prevent StrictMode double-invoke
         if (hasHandledCallback.current) return;
 
-        const result = handleAuthCallback();
-        if (result) {
-            hasHandledCallback.current = true;
-            const tokenJson = JSON.stringify({
-                accessToken: result.accessToken,
-                expiresAt: result.expiresAt,
-            });
-            updateUserToken(result.userId, tokenJson);
-        }
+        // Check if we have auth params in URL before doing anything
+        const params = new URLSearchParams(window.location.search);
+        if (!params.get('code')) return;
+
+        hasHandledCallback.current = true; // Set BEFORE async to prevent race
+
+        const handle = async () => {
+            const result = await handleAuthCallback();
+            if (result) {
+                const tokenJson = JSON.stringify({
+                    accessToken: result.accessToken,
+                    expiresAt: result.expiresAt,
+                });
+                updateUserToken(result.userId, tokenJson);
+            }
+        };
+        handle();
     }, [updateUserToken]);
 
     /** Auto-persist data changes */
@@ -126,6 +170,7 @@ export function GoogleAuthProvider({ children }) {
     const value = {
         googleTokens,
         getUserToken,
+        getFreshToken, // New async method
         isUserConnected,
         updateUserToken,
         selectedCalendars,

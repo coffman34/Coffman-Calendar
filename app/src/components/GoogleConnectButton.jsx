@@ -1,5 +1,14 @@
-import React from 'react';
-import { Button, Box, Typography, Chip } from '@mui/material';
+/**
+ * @fileoverview Google Connect Button with defensive UX
+ * @module components/GoogleConnectButton
+ * 
+ * DEFENSIVE UX FEATURES:
+ * - Loading state during OAuth redirect
+ * - Visual feedback for connection status
+ */
+
+import React, { useState } from 'react';
+import { Button, Box, Chip, CircularProgress } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import { initiateGoogleLogin, disconnectGoogle } from '../services/googleAuth';
@@ -9,31 +18,58 @@ const GoogleConnectButton = ({ userId, compact = false }) => {
     const { isUserConnected, updateUserToken } = useUser();
     const connected = isUserConnected(userId);
 
-    const handleConnect = () => initiateGoogleLogin(userId);
+    // Loading states for defensive UX
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isDisconnecting, setIsDisconnecting] = useState(false);
 
-    const handleDisconnect = () => {
-        disconnectGoogle(userId);
-        updateUserToken(userId, null);
+    /**
+     * Handle connect with loading state
+     * 
+     * JUNIOR DEV NOTE: Even though OAuth redirects away,
+     * showing a loading state prevents double-clicks and
+     * gives visual feedback that something is happening.
+     */
+    const handleConnect = () => {
+        setIsConnecting(true);
+        // OAuth will redirect, but show loading just in case
+        initiateGoogleLogin(userId);
+        // Reset after 5s in case redirect fails
+        setTimeout(() => setIsConnecting(false), 5000);
     };
+
+    const handleDisconnect = async () => {
+        if (isDisconnecting) return;
+        setIsDisconnecting(true);
+        try {
+            disconnectGoogle(userId);
+            updateUserToken(userId, null);
+        } finally {
+            setIsDisconnecting(false);
+        }
+    };
+
+    const isProcessing = isConnecting || isDisconnecting;
 
     if (compact) {
         return connected ? (
             <Chip
-                icon={<GoogleIcon sx={{ fontSize: 16 }} />}
+                icon={isDisconnecting ? <CircularProgress size={14} /> : <GoogleIcon sx={{ fontSize: 16 }} />}
                 label="Connected"
                 size="small"
                 color="success"
                 onDelete={handleDisconnect}
                 deleteIcon={<LinkOffIcon sx={{ fontSize: 14 }} />}
+                disabled={isProcessing}
             />
         ) : (
             <Chip
-                icon={<GoogleIcon sx={{ fontSize: 16 }} />}
-                label="Connect"
+                icon={isConnecting ? <CircularProgress size={14} /> : <GoogleIcon sx={{ fontSize: 16 }} />}
+                label={isConnecting ? 'Connecting...' : 'Connect'}
                 size="small"
                 variant="outlined"
                 onClick={handleConnect}
-                sx={{ cursor: 'pointer' }}
+                disabled={isProcessing}
+                sx={{ cursor: isProcessing ? 'wait' : 'pointer' }}
             />
         );
     }
@@ -44,20 +80,22 @@ const GoogleConnectButton = ({ userId, compact = false }) => {
                 <Button
                     variant="outlined"
                     color="error"
-                    startIcon={<LinkOffIcon />}
+                    startIcon={isDisconnecting ? <CircularProgress size={16} /> : <LinkOffIcon />}
                     onClick={handleDisconnect}
+                    disabled={isProcessing}
                     size="small"
                 >
-                    Disconnect Google
+                    {isDisconnecting ? 'Disconnecting...' : 'Disconnect Google'}
                 </Button>
             ) : (
                 <Button
                     variant="contained"
-                    startIcon={<GoogleIcon />}
+                    startIcon={isConnecting ? <CircularProgress size={16} color="inherit" /> : <GoogleIcon />}
                     onClick={handleConnect}
+                    disabled={isProcessing}
                     sx={{ bgcolor: '#4285f4', '&:hover': { bgcolor: '#3367d6' } }}
                 >
-                    Connect Google Calendar
+                    {isConnecting ? 'Connecting...' : 'Connect Google Calendar'}
                 </Button>
             )}
         </Box>

@@ -6,6 +6,7 @@ import theme from './theme/theme'
 import UserProvider from './modules/users/UserContext'
 import './index.css'
 
+console.log('[MAIN] Rendering root...');
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider theme={theme}>

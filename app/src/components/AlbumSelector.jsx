@@ -9,7 +9,7 @@ import { useUser } from '../modules/users/useUser';
 const STORAGE_KEY = 'screensaver_photos';
 
 const PhotoPicker = ({ userId, onPhotosSelected }) => {
-    const { getUserPhotos, setUserPhotos, googleTokens } = useUser();
+    const { getUserPhotos, setUserPhotos, getFreshToken } = useUser();
     const [status, setStatus] = useState('idle');
     const [error, setError] = useState(null);
     const photos = getUserPhotos(userId);
@@ -29,33 +29,42 @@ const PhotoPicker = ({ userId, onPhotosSelected }) => {
     };
 
     const startPicking = async () => {
-        const token = googleTokens[userId];
-        if (!token) { setError('Not connected to Google.'); return; }
-
-        setStatus('picking');
-        setError(null);
-
         try {
+            const token = await getFreshToken(userId);
+            if (!token) { setError('Not connected to Google.'); return; }
+
+            setStatus('picking');
+            setError(null);
+
             const session = await createPickerSession(token);
             window.open(session.pickerUri + '/autoclose', 'photoPicker', 'width=800,height=600');
             setStatus('polling');
-            pollForCompletion(token, session.id);
+
+            // JUNIOR DEV NOTE: We pass userId so polling can refresh token if needed
+            pollForCompletion(userId, session.id);
         } catch (e) {
             setError(e.message);
             setStatus('error');
         }
     };
 
-    const pollForCompletion = async (token, sessionId) => {
+    const pollForCompletion = async (currentUserId, sessionId) => {
         const poll = async () => {
             try {
+                // Always get fresh token for polling
+                const token = await getFreshToken(currentUserId);
+                if (!token) throw new Error('Session expired');
+
                 const session = await pollPickerSession(token, sessionId);
                 if (session.mediaItemsSet) {
                     clearInterval(pollRef.current);
-                    const newItems = await getPickedMediaItems(token, sessionId, userId);
+
+                    // Download items with fresh token
+                    const newItems = await getPickedMediaItems(token, sessionId, currentUserId);
+
                     const existingIds = new Set(photos.map(p => p.id));
                     const merged = [...photos, ...newItems.filter(i => !existingIds.has(i.id))];
-                    setUserPhotos(userId, merged);
+                    setUserPhotos(currentUserId, merged);
                     onPhotosSelected?.(merged);
                     setStatus('done');
                 }
