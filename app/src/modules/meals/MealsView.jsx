@@ -17,6 +17,7 @@
 
 import React, { useState } from 'react';
 import { Box, Typography, Button, Snackbar, Alert } from '@mui/material';
+import AppCard from '../../components/AppCard';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { useMeals } from './useMeals';
 import { useShoppingList } from './contexts/ShoppingListContext';
@@ -94,6 +95,7 @@ const MealsView = () => {
         // 1. Create meal from recipe with a new unique ID
         const meal = {
             ...recipe,
+            originRecipeId: recipe.id, // Track origin for future updates
             id: Date.now().toString(), // New ID since this is a new meal instance
         };
 
@@ -134,6 +136,15 @@ const MealsView = () => {
     };
 
     /**
+     * Handle preview request from RecipeBox
+     */
+    const handlePreviewRecipe = (recipe) => {
+        setDetailMeal(recipe);
+        setDetailDate(null);
+        setDetailCategory(null);
+    };
+
+    /**
      * Generate shopping list from current week's meals
      */
     const handleGenerateShoppingList = () => {
@@ -159,34 +170,36 @@ const MealsView = () => {
         ? getPreference(currentUser.id, detailMeal.id)
         : null;
 
-    return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
-            {/* Header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h4" fontWeight="bold">Meal Planning</Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    {/* Generate Shopping List Button */}
-                    <Button
-                        variant="outlined"
-                        startIcon={<ShoppingCartIcon />}
-                        onClick={handleGenerateShoppingList}
-                        size="small"
-                    >
-                        Generate List
-                    </Button>
-                    <FilterMenu />
-                </Box>
-            </Box>
+    const HeaderActions = (
+        <Box sx={{ display: 'flex', gap: 1 }}>
+            {/* Generate Shopping List Button */}
+            <Button
+                variant="outlined"
+                startIcon={<ShoppingCartIcon />}
+                onClick={handleGenerateShoppingList}
+                size="small"
+            >
+                Generate List
+            </Button>
+            <FilterMenu />
+        </Box>
+    );
 
+    return (
+        <AppCard
+            title="Meal Planning"
+            action={HeaderActions}
+            sx={{ height: '100%' }}
+        >
             {/* Main Content - Grid + Always-Visible Recipe Box */}
-            <Box sx={{ display: 'flex', flex: 1, gap: 2, overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', flex: 1, gap: 2, overflow: 'hidden', p: 2 }}>
                 <MealPlanGrid
                     onCellTap={handleCellTap}
                     onMealTap={handleMealTap}
                     onRecipeDrop={handleRecipeDrop}
                     onMealMove={handleMealMove}
                 />
-                <RecipeBox />
+                <RecipeBox onPreviewRecipe={handlePreviewRecipe} />
                 <ShoppingListPopup open={shoppingListOpen} onClose={() => setShoppingListOpen(false)} />
             </Box>
 
@@ -197,6 +210,7 @@ const MealsView = () => {
                 initialDate={selectedDate}
                 initialCategory={selectedCategory}
                 initialMeal={mealToEdit}
+                isRecipeMode={!selectedDate && !!mealToEdit} // Enable Recipe Mode if no date selected
             />
             <RecipeDetailPopup
                 open={!!detailMeal}
@@ -204,8 +218,8 @@ const MealsView = () => {
                 meal={detailMeal}
                 dateKey={detailDate}
                 categoryId={detailCategory}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
+                onEdit={handleEdit} // Always allow editing (Recipe Mode or Meal Mode)
+                onDelete={detailDate ? handleDelete : null} // Keep for legacy, though UI removed
                 preference={currentPreference}
                 onPreferenceChange={handlePreferenceChange}
             />
@@ -221,7 +235,7 @@ const MealsView = () => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
-        </Box>
+        </AppCard>
     );
 };
 

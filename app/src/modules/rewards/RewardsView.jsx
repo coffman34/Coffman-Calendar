@@ -22,12 +22,18 @@ import {
     IconButton,
     Grid,
     CircularProgress,
-    Alert
+    Alert,
+    Dialog,
+    DialogContent
 } from '@mui/material';
+import AppCard from '../../components/AppCard';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import { UserContext } from '../users/UserContextCore';
+import { usePin } from '../../components/usePin';
+import PinDialog from '../../components/PinDialog';
+import UserSelector from '../users/UserSelector';
 import { useGamification } from './hooks/useGamification';
 import StatBar from './components/StatBar';
 import GoldDisplay from './components/GoldDisplay';
@@ -42,10 +48,13 @@ import RewardsManager from './RewardsManager';
  */
 const RewardsView = () => {
     // ========================================================================
-    // CONTEXT & STATE
+    // STATE
     // ========================================================================
 
-    const { currentUser } = useContext(UserContext);
+    // Who is currently viewing the rewards dashboard? (Null = Selection Screen)
+    const [viewingUser, setViewingUser] = useState(null);
+
+    // Gamification Hook tied to the VIEWING user (not necessarily the global currentUser)
     const {
         level,
         xpInLevel,
@@ -56,90 +65,179 @@ const RewardsView = () => {
         loading,
         purchaseReward,
         refreshShop
-    } = useGamification();
+    } = useGamification(viewingUser);
 
+    const { currentUser: globalUser } = useContext(UserContext);
+    const { verifyPin } = usePin();
+
+    // UI State
     const [managerOpen, setManagerOpen] = useState(false);
+    const [pinOpen, setPinOpen] = useState(false);
+    const [pinMode, setPinMode] = useState('access'); // 'access' | 'manager'
+    const [selectedCandidate, setSelectedCandidate] = useState(null);
 
     // ========================================================================
     // HANDLERS
     // ========================================================================
 
+    /**
+     * Handle User Selection from Landing Page
+     */
+    const handleUserSelect = (user) => {
+        // If user has a PIN, verify it first
+        if (user.pin) {
+            setSelectedCandidate(user);
+            setPinMode('access');
+            setPinOpen(true);
+        } else {
+            // No PIN -> Grant immediate access
+            setViewingUser(user);
+        }
+    };
+
+    /**
+     * Handle Manager Access (Add Rewards)
+     */
+    const handleManagerAccess = () => {
+        // If the viewer IS a parent, allow access
+        if (viewingUser?.isParent) {
+            setManagerOpen(true);
+            return;
+        }
+
+        // Otherwise (Child viewing), allow if a Parent enters PIN
+        setPinMode('manager');
+        setPinOpen(true);
+    };
+
+    /**
+     * Handle PIN Success
+     */
+    const handlePinSuccess = (enteredPin) => {
+        if (pinMode === 'access') {
+            // Check against the CANDIDATE'S pin
+            if (enteredPin === selectedCandidate?.pin) {
+                setViewingUser(selectedCandidate);
+                setPinOpen(false);
+                return true;
+            }
+        } else if (pinMode === 'manager') {
+            // Check against ANY parent PIN
+            if (verifyPin(enteredPin)) {
+                setManagerOpen(true);
+                setPinOpen(false);
+                return true;
+            }
+        }
+        return false;
+    };
+
+    /**
+     * Purchase Item (Directly for viewingUser)
+     */
     const handlePurchase = async (item) => {
         const confirmed = window.confirm(`Buy "${item.title}" for ${item.cost} Gold?`);
         if (confirmed) {
-            await purchaseReward(item);
+            await purchaseReward(item, viewingUser.id);
         }
+    };
+
+    const handleBack = () => {
+        setViewingUser(null);
+        setSelectedCandidate(null);
     };
 
     // ========================================================================
     // RENDER
     // ========================================================================
 
-    // No user selected
-    if (!currentUser) {
+    // 1. LANDING PAGE: User Selector
+    if (!viewingUser) {
         return (
-            <Box sx={{ p: 3, textAlign: 'center' }}>
-                <EmojiEventsIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                <Typography color="text.secondary">
-                    Select a profile to view rewards
-                </Typography>
-            </Box>
+            <>
+                <UserSelector
+                    title="Who is checking rewards?"
+                    onSelect={handleUserSelect}
+                    showGoogle={false}
+                />
+
+                <Dialog
+                    open={pinOpen}
+                    onClose={() => setPinOpen(false)}
+                    maxWidth="xs"
+                    fullWidth
+                >
+                    <Box sx={{ height: 500 }}>
+                        <PinDialog
+                            title={`Enter ${selectedCandidate?.name}'s PIN`}
+                            onSuccess={handlePinSuccess}
+                        />
+                    </Box>
+                </Dialog>
+            </>
         );
     }
 
+    // 2. DASHBOARD: Viewing Rewards for `viewingUser`
+    const HeaderActions = (
+        <Box>
+            <IconButton onClick={handleBack} sx={{ mr: 1 }}>
+                <Typography variant="caption" sx={{ mr: 1, fontWeight: 'bold' }}>BACK</Typography>
+            </IconButton>
+            <IconButton
+                onClick={handleManagerAccess}
+                color="primary"
+                data-testid="rewards-manager-btn"
+            >
+                <SettingsIcon />
+            </IconButton>
+        </Box>
+    );
+
     return (
-        <Box sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
-            {/* Header */}
-            <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                mb: 2
-            }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EmojiEventsIcon color="primary" />
-                    <Typography variant="h5" fontWeight="bold">
-                        {currentUser.name}'s Rewards
-                    </Typography>
+        <>
+            <AppCard
+                title={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <EmojiEventsIcon color="primary" />
+                        <Typography variant="h5" fontWeight="bold">
+                            {viewingUser.name}'s Rewards
+                        </Typography>
+                    </Box>
+                }
+                action={HeaderActions}
+                sx={{ height: '100%' }}
+            >
+                <Box sx={{ p: 2, height: '100%', overflowY: 'auto' }}>
+                    {loading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : (
+                        <Grid container spacing={2}>
+                            {/* Left Column: Stats */}
+                            <Grid item xs={12} md={4}>
+                                <StatBar
+                                    level={level}
+                                    xpInLevel={xpInLevel}
+                                    xpToNextLevel={xpToNextLevel}
+                                />
+                                <GoldDisplay gold={gold} />
+                            </Grid>
+
+                            {/* Right Column: Shop & Log */}
+                            <Grid item xs={12} md={8}>
+                                <RewardShop
+                                    items={shopItems}
+                                    userGold={gold}
+                                    onPurchase={handlePurchase}
+                                />
+                                <RedemptionLog redemptions={redemptions} />
+                            </Grid>
+                        </Grid>
+                    )}
                 </Box>
-
-                {/* Manager Button */}
-                <IconButton
-                    onClick={() => setManagerOpen(true)}
-                    color="primary"
-                    data-testid="rewards-manager-btn"
-                >
-                    <SettingsIcon />
-                </IconButton>
-            </Box>
-
-            {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress />
-                </Box>
-            ) : (
-                <Grid container spacing={2}>
-                    {/* Left Column: Stats */}
-                    <Grid item xs={12} md={4}>
-                        <StatBar
-                            level={level}
-                            xpInLevel={xpInLevel}
-                            xpToNextLevel={xpToNextLevel}
-                        />
-                        <GoldDisplay gold={gold} />
-                    </Grid>
-
-                    {/* Right Column: Shop & Log */}
-                    <Grid item xs={12} md={8}>
-                        <RewardShop
-                            items={shopItems}
-                            userGold={gold}
-                            onPurchase={handlePurchase}
-                        />
-                        <RedemptionLog redemptions={redemptions} />
-                    </Grid>
-                </Grid>
-            )}
+            </AppCard>
 
             {/* Manager Dialog */}
             <RewardsManager
@@ -147,7 +245,22 @@ const RewardsView = () => {
                 onClose={() => setManagerOpen(false)}
                 onSave={refreshShop}
             />
-        </Box>
+
+            {/* PIN Dialog (Manager Access) */}
+            <Dialog
+                open={pinOpen && pinMode === 'manager'}
+                onClose={() => setPinOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <Box sx={{ height: 500 }}>
+                    <PinDialog
+                        title="Parent PIN Required"
+                        onSuccess={handlePinSuccess}
+                    />
+                </Box>
+            </Dialog>
+        </>
     );
 };
 

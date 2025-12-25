@@ -118,16 +118,32 @@ export const completeTask = async (req, res, next) => {
             return res.status(404).json({ error: 'Task not found' });
         }
 
-        // Award XP and Gold to the user if rewards were earned
+        // Award XP and Gold to the user(s) if rewards were earned
         if (result.xpAwarded > 0 || result.goldAwarded > 0) {
-            const userId = result.task.assignedTo;
+            const { task, xpAwarded, goldAwarded } = result;
+            const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+            const strategy = task.rewardStrategy || 'full';
 
-            if (result.xpAwarded > 0) {
-                await statsService.addXP(userId, result.xpAwarded);
+            // JUNIOR DEV NOTE: Calculate how much each person gets based on strategy.
+            // 'full' = everyone gets the full amount.
+            // 'split' = total is divided by number of assignees.
+            const xpPerPerson = strategy === 'split' ? Math.floor(xpAwarded / assignees.length) : xpAwarded;
+            const goldPerPerson = strategy === 'split' ? Math.floor(goldAwarded / assignees.length) : goldAwarded;
+
+            // 1. Loop through all assigned users
+            // 2. Award calculated XP/Gold to each
+            for (const userId of assignees) {
+                if (xpPerPerson > 0) {
+                    await statsService.addXP(userId, xpPerPerson);
+                }
+                if (goldPerPerson > 0) {
+                    await statsService.addGold(userId, goldPerPerson);
+                }
             }
-            if (result.goldAwarded > 0) {
-                await statsService.addGold(userId, result.goldAwarded);
-            }
+
+            // Add actual awarded per person to result for frontend feedback
+            result.xpPerPerson = xpPerPerson;
+            result.goldPerPerson = goldPerPerson;
         }
 
         res.json(result);
@@ -149,15 +165,22 @@ export const uncompleteTask = async (req, res, next) => {
             return res.status(404).json({ error: 'Task not found' });
         }
 
-        // Revoke XP and Gold from the user
+        // Revoke XP and Gold from the user(s)
         if (result.xpRevoked > 0 || result.goldRevoked > 0) {
-            const userId = result.task.assignedTo;
+            const { task, xpRevoked, goldRevoked } = result;
+            const assignees = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+            const strategy = task.rewardStrategy || 'full';
 
-            if (result.xpRevoked > 0) {
-                await statsService.addXP(userId, -result.xpRevoked);
-            }
-            if (result.goldRevoked > 0) {
-                await statsService.addGold(userId, -result.goldRevoked);
+            const xpPerPerson = strategy === 'split' ? Math.floor(xpRevoked / assignees.length) : xpRevoked;
+            const goldPerPerson = strategy === 'split' ? Math.floor(goldRevoked / assignees.length) : goldRevoked;
+
+            for (const userId of assignees) {
+                if (xpPerPerson > 0) {
+                    await statsService.addXP(userId, -xpPerPerson);
+                }
+                if (goldPerPerson > 0) {
+                    await statsService.addGold(userId, -goldPerPerson);
+                }
             }
         }
 

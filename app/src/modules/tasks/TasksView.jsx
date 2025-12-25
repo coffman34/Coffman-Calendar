@@ -19,6 +19,7 @@ import {
     Box, Typography, Paper, List, CircularProgress, Alert,
     Button, Fab
 } from '@mui/material';
+import AppCard from '../../components/AppCard';
 import AddIcon from '@mui/icons-material/Add';
 import { useUser } from '../../modules/users/useUser';
 import { useUI } from '../ui/useUI';
@@ -71,64 +72,81 @@ const TasksView = () => {
     // RENDER
     // ========================================================================
 
+
+    const HeaderActions = (
+        <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setAddModalOpen(true)}
+            size="small"
+        >
+            Add Task
+        </Button>
+    );
+
     return (
-        <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-            {/* Error Alert */}
-            {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                    {error}
-                </Alert>
-            )}
+        <AppCard
+            title={`${currentUser.name}'s Tasks`}
+            action={HeaderActions}
+            sx={{ height: '100%' }}
+        >
+            <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {/* Error Alert */}
+                {error && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {error}
+                    </Alert>
+                )}
 
-            {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h5" fontWeight="bold">
-                    {currentUser.name}'s Tasks
-                </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => setAddModalOpen(true)}
+                {/* Main Task List */}
+                {/* JUNIOR DEV NOTE: We use white background and elevation here to 
+                    make this list look like a 'card' sitting on top of the themed background. */}
+                <Paper
+                    elevation={1}
+                    sx={{
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        bgcolor: '#FFFFFF', // Explicit white
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                        borderRadius: 2
+                    }}
                 >
-                    Add Task
-                </Button>
+                    <List sx={{ flexGrow: 1, overflow: 'auto', p: 0 }}>
+                        {loading && localTasks.length === 0 ? (
+                            <Box display="flex" justifyContent="center" p={4}>
+                                <CircularProgress />
+                            </Box>
+                        ) : localTasks.length === 0 ? (
+                            <Box sx={{ textAlign: 'center', py: 6 }}>
+                                <Typography variant="h6" color="text.secondary" gutterBottom>
+                                    No tasks yet!
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                    Create tasks to earn XP and Gold.
+                                </Typography>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<AddIcon />}
+                                    onClick={() => setAddModalOpen(true)}
+                                >
+                                    Create First Task
+                                </Button>
+                            </Box>
+                        ) : (
+                            localTasks.map(task => (
+                                <LocalTaskItem
+                                    key={task.id}
+                                    task={task}
+                                    onToggle={toggleLocalTask}
+                                    onDelete={deleteLocalTask}
+                                />
+                            ))
+                        )}
+                    </List>
+                </Paper>
             </Box>
-
-            {/* Main Task List */}
-            <Paper sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <List sx={{ flexGrow: 1, overflow: 'auto', p: 0 }}>
-                    {loading && localTasks.length === 0 ? (
-                        <Box display="flex" justifyContent="center" p={4}>
-                            <CircularProgress />
-                        </Box>
-                    ) : localTasks.length === 0 ? (
-                        <Box sx={{ textAlign: 'center', py: 6 }}>
-                            <Typography variant="h6" color="text.secondary" gutterBottom>
-                                No tasks yet!
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                                Create tasks to earn XP and Gold.
-                            </Typography>
-                            <Button
-                                variant="outlined"
-                                startIcon={<AddIcon />}
-                                onClick={() => setAddModalOpen(true)}
-                            >
-                                Create First Task
-                            </Button>
-                        </Box>
-                    ) : (
-                        localTasks.map(task => (
-                            <LocalTaskItem
-                                key={task.id}
-                                task={task}
-                                onToggle={toggleLocalTask}
-                                onDelete={deleteLocalTask}
-                            />
-                        ))
-                    )}
-                </List>
-            </Paper>
 
             {/* Add Task Modal */}
             <AddTaskModal
@@ -137,7 +155,7 @@ const TasksView = () => {
                 onSave={handleAddTask}
                 currentUserId={currentUser.id}
             />
-        </Box>
+        </AppCard>
     );
 };
 

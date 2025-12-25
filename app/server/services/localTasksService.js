@@ -98,8 +98,16 @@ export const getTasksForUser = async (userId) => {
     const data = ensureSchema(await getData());
 
     // Filter by user, check recurrence, and reset if needed
+    // JUNIOR DEV NOTE: We now check if the userId is IN the assignedTo array
+    // or if it matches the assignedTo string (for backward compatibility).
     return data.localTasks
-        .filter(task => String(task.assignedTo) === String(userId))
+        .filter(task => {
+            const assigned = task.assignedTo;
+            if (Array.isArray(assigned)) {
+                return assigned.some(id => String(id) === String(userId));
+            }
+            return String(assigned) === String(userId);
+        })
         .filter(isActiveToday)
         .map(task => {
             // Auto-reset recurring tasks at midnight
@@ -127,14 +135,21 @@ export const getAllTasks = async () => {
 export const createTask = async (taskData) => {
     const data = ensureSchema(await getData());
 
+    // JUNIOR DEV NOTE: We ensure assignedTo is always an array for new tasks.
+    // We also support 'rewardStrategy' which can be 'full' or 'split'.
+    const assignedTo = Array.isArray(taskData.assignedTo)
+        ? taskData.assignedTo
+        : [taskData.assignedTo];
+
     const newTask = {
         id: uuidv4(),
         title: taskData.title,
         description: taskData.description || '',
         dueDate: taskData.dueDate || null,
-        assignedTo: taskData.assignedTo,
+        assignedTo: assignedTo,
         xpReward: taskData.xpReward || 10,
         goldReward: taskData.goldReward || 5,
+        rewardStrategy: taskData.rewardStrategy || 'full', // 'full' or 'split'
         isRecurring: taskData.isRecurring || false,
         recurrence: taskData.recurrence || 'daily', // 'daily', 'weekly', 'specific'
         days: taskData.days || [], // [0-6] for specific days

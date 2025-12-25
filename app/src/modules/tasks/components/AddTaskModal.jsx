@@ -25,7 +25,10 @@ import {
     Box,
     Typography,
     Slider,
-    InputAdornment
+    OutlinedInput,
+    Chip,
+    ToggleButton,
+    ToggleButtonGroup
 } from '@mui/material';
 import { UserContext } from '../../users/UserContextCore';
 
@@ -46,7 +49,9 @@ const AddTaskModal = ({ open, onClose, onSave, currentUserId }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState('');
-    const [assignedTo, setAssignedTo] = useState(currentUserId || '');
+    // JUNIOR DEV NOTE: assignedTo is now an array to support multiple users.
+    const [assignedTo, setAssignedTo] = useState([]);
+    const [rewardStrategy, setRewardStrategy] = useState('full');
     const [xpReward, setXpReward] = useState(10);
     const [goldReward, setGoldReward] = useState(5);
     const [isRecurring, setIsRecurring] = useState(false);
@@ -58,7 +63,9 @@ const AddTaskModal = ({ open, onClose, onSave, currentUserId }) => {
         setTitle('');
         setDescription('');
         setDueDate('');
-        setAssignedTo(currentUserId || users[0]?.id || '');
+        // Initialize with current user if possible
+        setAssignedTo(currentUserId ? [currentUserId] : []);
+        setRewardStrategy('full');
         setXpReward(10);
         setGoldReward(5);
         setIsRecurring(false);
@@ -68,13 +75,14 @@ const AddTaskModal = ({ open, onClose, onSave, currentUserId }) => {
 
     // Handle form submission
     const handleSubmit = () => {
-        if (!title.trim()) return;
+        if (!title.trim() || assignedTo.length === 0) return;
 
         const taskData = {
             title: title.trim(),
             description: description.trim(),
             dueDate: dueDate || null,
             assignedTo,
+            rewardStrategy,
             xpReward,
             goldReward,
             isRecurring,
@@ -84,7 +92,6 @@ const AddTaskModal = ({ open, onClose, onSave, currentUserId }) => {
 
         onSave(taskData);
         onClose();
-        handleOpen(); // Reset form
     };
 
     return (
@@ -131,13 +138,28 @@ const AddTaskModal = ({ open, onClose, onSave, currentUserId }) => {
                         InputLabelProps={{ shrink: true }}
                     />
 
-                    {/* Assign To */}
+                    {/* Assign To (Multi-Select) */}
                     <FormControl fullWidth>
                         <InputLabel>Assign To</InputLabel>
                         <Select
+                            multiple
                             value={assignedTo}
                             onChange={(e) => setAssignedTo(e.target.value)}
-                            label="Assign To"
+                            input={<OutlinedInput label="Assign To" />}
+                            renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selected.map((value) => {
+                                        const user = users.find(u => u.id === value);
+                                        return (
+                                            <Chip
+                                                key={value}
+                                                label={user ? `${user.avatar} ${user.name}` : value}
+                                                size="small"
+                                            />
+                                        );
+                                    })}
+                                </Box>
+                            )}
                         >
                             {users.map(user => (
                                 <MenuItem key={user.id} value={user.id}>
@@ -146,6 +168,34 @@ const AddTaskModal = ({ open, onClose, onSave, currentUserId }) => {
                             ))}
                         </Select>
                     </FormControl>
+
+                    {/* Reward Strategy (Only show if multiple assignees) */}
+                    {assignedTo.length > 1 && (
+                        <Box>
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                                Reward Strategy
+                            </Typography>
+                            <ToggleButtonGroup
+                                value={rewardStrategy}
+                                exclusive
+                                onChange={(e, val) => val && setRewardStrategy(val)}
+                                fullWidth
+                                size="small"
+                            >
+                                <ToggleButton value="full">
+                                    Full Reward
+                                </ToggleButton>
+                                <ToggleButton value="split">
+                                    Split Reward
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                                {rewardStrategy === 'full'
+                                    ? 'Everyone gets the full XP and Gold.'
+                                    : 'Reward is split evenly among all assigned users.'}
+                            </Typography>
+                        </Box>
+                    )}
 
                     {/* XP Reward */}
                     <Box>
@@ -248,7 +298,7 @@ const AddTaskModal = ({ open, onClose, onSave, currentUserId }) => {
                 <Button
                     variant="contained"
                     onClick={handleSubmit}
-                    disabled={!title.trim()}
+                    disabled={!title.trim() || assignedTo.length === 0}
                 >
                     Create Task
                 </Button>

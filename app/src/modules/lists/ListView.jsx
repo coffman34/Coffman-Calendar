@@ -24,6 +24,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { useShoppingList } from '../meals/contexts/ShoppingListContext';
 import { useMeals } from '../meals/useMeals';
 import { format } from 'date-fns';
+import AppCard from '../../components/AppCard';
 
 /**
  * Aisle Section Component
@@ -34,9 +35,9 @@ const AisleSection = ({ aisle, onToggleItem }) => {
     const checkedCount = aisle.items.filter(i => i.checked).length;
 
     return (
-        <Paper sx={{ mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        <Paper sx={{ mb: 2, borderRadius: 2, overflow: 'hidden', bgcolor: '#FFFFFF', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
             {/* Aisle Header */}
-            <ListItemButton onClick={() => setExpanded(!expanded)} sx={{ bgcolor: 'action.hover' }}>
+            <ListItemButton onClick={() => setExpanded(!expanded)} sx={{ bgcolor: 'rgba(0,0,0,0.03)' }}>
                 <ListItemIcon sx={{ minWidth: 40 }}>
                     <Typography variant="h6">{aisle.icon}</Typography>
                 </ListItemIcon>
@@ -106,17 +107,18 @@ const ListView = () => {
     };
 
     return (
-        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
-            {/* Header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <AppCard
+            title={
                 <Box>
-                    <Typography variant="h4" fontWeight="bold">Shopping List</Typography>
+                    <Typography variant="h5" fontWeight="bold">Shopping List</Typography>
                     {shoppingList.lastGenerated && (
                         <Typography variant="caption" color="text.secondary">
                             Generated {format(new Date(shoppingList.lastGenerated), 'MMM d, h:mm a')}
                         </Typography>
                     )}
                 </Box>
+            }
+            action={
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button
                         variant="outlined"
@@ -131,40 +133,43 @@ const ListView = () => {
                         </IconButton>
                     )}
                 </Box>
-            </Box>
-
-            {/* Progress */}
-            {totalItems > 0 && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {checkedItems} of {totalItems} items checked
-                </Typography>
-            )}
-
-            {/* List Content */}
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
-                {totalItems === 0 ? (
-                    <Box sx={{ textAlign: 'center', py: 8 }}>
-                        <Typography variant="h6" color="text.secondary" gutterBottom>
-                            No items yet
-                        </Typography>
-                        <Typography variant="body2" color="text.disabled" sx={{ mb: 3 }}>
-                            Add meals with ingredients to your meal plan, then generate your shopping list.
-                        </Typography>
-                        <Button variant="contained" onClick={handleGenerate}>
-                            Generate from This Week's Meals
-                        </Button>
-                    </Box>
-                ) : (
-                    groupedItems.map(aisle => (
-                        <AisleSection
-                            key={aisle.id}
-                            aisle={aisle}
-                            onToggleItem={toggleItem}
-                        />
-                    ))
+            }
+            sx={{ height: '100%' }}
+        >
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
+                {/* Progress */}
+                {totalItems > 0 && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {checkedItems} of {totalItems} items checked
+                    </Typography>
                 )}
+
+                {/* List Content */}
+                <Box sx={{ flex: 1, overflow: 'auto' }}>
+                    {totalItems === 0 ? (
+                        <Box sx={{ textAlign: 'center', py: 8 }}>
+                            <Typography variant="h6" color="text.secondary" gutterBottom>
+                                No items yet
+                            </Typography>
+                            <Typography variant="body2" color="text.disabled" sx={{ mb: 3 }}>
+                                Add meals with ingredients to your meal plan, then generate your shopping list.
+                            </Typography>
+                            <Button variant="contained" onClick={handleGenerate}>
+                                Generate from This Week's Meals
+                            </Button>
+                        </Box>
+                    ) : (
+                        groupedItems.map(aisle => (
+                            <AisleSection
+                                key={aisle.id}
+                                aisle={aisle}
+                                onToggleItem={toggleItem}
+                            />
+                        ))
+                    )}
+                </Box>
             </Box>
-        </Box>
+        </AppCard>
     );
 };
 

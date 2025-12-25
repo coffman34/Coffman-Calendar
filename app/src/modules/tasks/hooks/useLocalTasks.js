@@ -112,7 +112,9 @@ export const useLocalTasks = (userId, showNotification) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...taskData,
-                    assignedTo: userId
+                    // JUNIOR DEV NOTE: If taskData already has assignedTo (array), use it.
+                    // Otherwise, fallback to the current user ID for single assignment.
+                    assignedTo: taskData.assignedTo || userId
                 })
             });
 

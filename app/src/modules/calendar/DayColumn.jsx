@@ -14,18 +14,30 @@ const DayColumn = ({ day, events, onAddEvent, onEditEvent, onDeleteEvent }) => {
     const dateKey = format(day, 'yyyy-MM-dd');
 
     return (
-        <Paper elevation={isToday ? 6 : 2} sx={{
-            flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column',
-            bgcolor: isToday ? 'rgba(255, 107, 53, 0.02)' : '#fff',
-            boxShadow: isToday ? '0 8px 32px rgba(255, 107, 53, 0.15)' : '0 4px 12px rgba(0,0,0,0.08)',
-            borderRadius: 2,
-            mx: 0.5,
-            overflow: 'hidden',
-            border: isToday ? '2px solid #FF6B35' : '1px solid rgba(0,0,0,0.05)',
-            position: 'relative',
-            zIndex: isToday ? 1 : 0,
-            transition: 'all 0.3s ease'
-        }}>
+        <Paper
+            elevation={isToday ? 4 : 1}
+            sx={{
+                flex: 1,
+                minWidth: 140,
+                display: 'flex',
+                flexDirection: 'column',
+                // JUNIOR DEV NOTE: Explicit white ensures contrast against
+                // themed parent cards (which may be pink, blue, etc.)
+                bgcolor: '#FFFFFF',
+                borderRadius: 2,
+                m: 1, // Increased gutter (8px) per user request
+                overflow: 'hidden',
+                border: isToday ? '2px solid #FF6B35' : '1px solid rgba(0,0,0,0.08)',
+                position: 'relative',
+                zIndex: isToday ? 1 : 0,
+                transition: 'all 0.3s ease',
+                boxShadow: isToday ? '0 4px 16px rgba(255,107,53,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
+                '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 20px rgba(0,0,0,0.1)'
+                }
+            }}
+        >
             {/* Day Header */}
             <Box sx={{ p: 1, borderBottom: '1px solid #eee', textAlign: 'center' }}>
                 <Typography variant="subtitle2" fontWeight="bold">

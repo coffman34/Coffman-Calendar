@@ -41,7 +41,9 @@ const CookMode = ({ open, onClose, recipe }) => {
     const [timerRunning, setTimerRunning] = useState(false);
     const wakeLockRef = useRef(null);
 
-    const steps = recipe?.steps || [];
+    const steps = (recipe?.steps && recipe.steps.length > 0)
+        ? recipe.steps
+        : (recipe?.instructions ? [{ text: recipe.instructions, ingredientIds: [] }] : []);
     const totalSteps = steps.length;
 
     // ========================================================================

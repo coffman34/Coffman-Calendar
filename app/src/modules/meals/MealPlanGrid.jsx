@@ -187,7 +187,7 @@ const MealPlanGrid = ({ onCellTap, onMealTap, onRecipeDrop, onMealMove }) => {
                                 sx={{
                                     borderRadius: 1,
                                     minHeight: 80,
-                                    bgcolor: isDragTarget ? 'primary.light' : '#fafafa',
+                                    bgcolor: isDragTarget ? 'primary.light' : '#FFFFFF',
                                     position: 'relative',
                                     border: vetoNames
                                         ? '2px solid #ff9800'

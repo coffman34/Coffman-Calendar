@@ -102,9 +102,13 @@ const fetchRedemptions = async (unfulfilledOnly = false) => {
  * 
  * @returns {object} Stats and actions
  */
-export const useGamification = () => {
-    const { currentUser } = useContext(UserContext);
+export const useGamification = (overrideUser) => {
+    const { currentUser: contextUser } = useContext(UserContext);
     const { showNotification } = useUI();
+
+    // Use overrideUser if provided (can be null), otherwise fall back to context
+    // NOTE: Passing 'null' as overrideUser explicitly disables the hook until a user is provided.
+    const currentUser = overrideUser !== undefined ? overrideUser : contextUser;
 
     // State
     const [stats, setStats] = useState({
@@ -219,7 +223,7 @@ export const useGamification = () => {
             const result = await updateGoldApi(currentUser.id, amount);
             setStats(prev => ({ ...prev, gold: result.gold }));
             return result;
-        } catch (err) {
+        } catch {
             await loadStats();
             return null;
         }
@@ -235,25 +239,40 @@ export const useGamification = () => {
     /**
      * Purchases a reward from the shop
      */
-    const purchaseReward = useCallback(async (reward) => {
-        if (!currentUser?.id) return false;
+    const purchaseReward = useCallback(async (reward, targetUserId = null) => {
+        const userIdToUse = targetUserId || currentUser?.id;
+        if (!userIdToUse) return false;
 
-        // Check if user has enough gold
-        if (stats.gold < reward.cost) {
-            showNotification("Not enough gold!", 'error');
-            return false;
+        // Note: checking local 'stats.gold' might be inaccurate if targetUserId != currentUser
+        // For a robust implementation, we should probably check gold on the backend or fetch it first.
+        // However, for this UI-first approach where we select a user, 
+        // we might assume the UI calling this has verified or we rely on backend fail.
+
+        // JUNIOR DEV NOTE: If buying for another user, our local `stats` object
+        // (which reflects currentUser) is not the correct source of truth for gold.
+        // TODO: Ideally fetch target user's stats first.
+        // For now, valid purchase will be confirmed by backend.
+
+        // If purchasing for SELF, check local gold to prevent unnecessary API call
+        if (userIdToUse === currentUser?.id) {
+            if (stats.gold < reward.cost) {
+                showNotification("Not enough gold!", 'error');
+                return false;
+            }
         }
 
         try {
-            await redeemRewardApi(currentUser.id, reward.id, reward.title, reward.cost);
+            await redeemRewardApi(userIdToUse, reward.id, reward.title, reward.cost);
 
-            // Update local state
-            setStats(prev => ({
-                ...prev,
-                gold: prev.gold - reward.cost
-            }));
+            // If we bought for ourselves, update local state
+            if (userIdToUse === currentUser?.id) {
+                setStats(prev => ({
+                    ...prev,
+                    gold: prev.gold - reward.cost
+                }));
+            }
 
-            // Reload redemptions
+            // Reload redemptions (global log)
             await loadRedemptions();
 
             showNotification(`🎁 Redeemed: ${reward.title}!`, 'success');

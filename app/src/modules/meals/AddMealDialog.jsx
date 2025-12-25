@@ -16,15 +16,16 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { format } from 'date-fns';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useMealCategories } from './useMealCategories';
 import { useMeals } from './useMeals';
 import IngredientInput from './components/IngredientInput';
 import StepInput from './components/StepInput';
 import { parseStepsFromInstructions } from './utils/recipeSchema';
 
-const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMeal }) => {
+const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMeal, isRecipeMode = false }) => {
     const { categories } = useMealCategories();
-    const { recipes, addMeal, updateMeal, deleteMeal, saveRecipe } = useMeals();
+    const { recipes, addMeal, updateMeal, deleteMeal, saveRecipe, deleteRecipe } = useMeals();
 
     // Defensive: ensure recipes is always an array
     const safeRecipes = Array.isArray(recipes) ? recipes : [];
@@ -78,15 +79,19 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
         setIsSaving(true);
 
         // Build meal object with extended schema
-        const baseData = tab === 0 && selectedRecipe ? selectedRecipe : {
-            name: name.trim(),
-            instructions,
-            ingredients,
-            youtubeUrl: youtubeUrl.trim() || null,
-            // Use explicit steps if available, else fall back to parsing manual text
-            steps: steps.length > 0 ? steps : parseStepsFromInstructions(instructions),
-            sourceApi: 'manual'
-        };
+        // JUNIOR DEV NOTE: We track originRecipeId to allow updates to propagate back to the master recipe
+        const baseData = tab === 0 && selectedRecipe
+            ? { ...selectedRecipe, originRecipeId: selectedRecipe.id }
+            : {
+                name: name.trim(),
+                instructions,
+                ingredients,
+                youtubeUrl: youtubeUrl.trim() || null,
+                // Use explicit steps if available, else fall back to parsing manual text
+                steps: steps.length > 0 ? steps : parseStepsFromInstructions(instructions),
+                sourceApi: 'manual',
+                originRecipeId: initialMeal?.originRecipeId // Preserve origin link on edit
+            };
 
         const mealData = {
             ...baseData,
@@ -100,30 +105,56 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
 
         if (initialMeal) {
             // Update Logic
-            const dateChanged = initialDate !== date;
-            const catChanged = initialCategory !== categoryId;
-
-            if (dateChanged || catChanged) {
-                // Move: Delete old -> Add new
-                deleteMeal(initialDate, initialCategory, initialMeal.id);
-                addMeal(date, categoryId, mealData);
+            if (isRecipeMode) {
+                // Recipe Edit Mode: Just update the recipe (happens below), skip meal scheduling
+                // We don't return here because the saveRecipe call is at the end
             } else {
-                // Update in place
-                updateMeal(date, categoryId, initialMeal.id, mealData);
+                // Scheduled Meal Edit Mode
+                const dateChanged = initialDate !== date;
+                const catChanged = initialCategory !== categoryId;
+
+                if (dateChanged || catChanged) {
+                    // Move: Delete old -> Add new
+                    deleteMeal(initialDate, initialCategory, initialMeal.id);
+                    addMeal(date, categoryId, mealData);
+                } else {
+                    // Update in place
+                    updateMeal(date, categoryId, initialMeal.id, mealData);
+                }
             }
         } else {
             // Create Logic
-            addMeal(date, categoryId, mealData);
+            if (!isRecipeMode) {
+                addMeal(date, categoryId, mealData);
+            }
         }
 
         // Always save to recipes as per user request (Recipe Box serves as the database)
         // Only save if we are in "New Entry" mode (tab 1) or edited a manual entry
         if (tab === 1 || !selectedRecipe) {
-            saveRecipe({ ...mealData, categoryId });
+            const recipeToSave = { ...mealData, categoryId };
+
+            // Smart Update: If this came from a master recipe, update IT instead of duplicating
+            if (mealData.originRecipeId) {
+                recipeToSave.id = mealData.originRecipeId;
+            }
+
+            saveRecipe(recipeToSave);
         }
 
         setIsSaving(false);
         resetAndClose();
+    };
+
+    const handleDelete = () => {
+        if (window.confirm(isRecipeMode ? "Delete this saved recipe?" : "Delete this meal?")) {
+            if (isRecipeMode) {
+                deleteRecipe(initialMeal.id);
+            } else {
+                deleteMeal(initialDate, initialCategory, initialMeal.id);
+            }
+            resetAndClose();
+        }
     };
 
     const resetAndClose = () => {
@@ -229,22 +260,30 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
                     </>
                 )}
 
-                {/* Date & Category */}
-                <Box sx={{ display: 'flex', gap: 2, my: 2 }}>
-                    <TextField type="date" label="Date" value={date}
-                        onChange={e => setDate(e.target.value)} size="small"
-                        InputLabelProps={{ shrink: true }} sx={{ flex: 1 }} />
-                    <TextField select label="Category" value={categoryId}
-                        onChange={e => setCategoryId(e.target.value)} size="small"
-                        SelectProps={{ native: true }} sx={{ flex: 1 }}>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </TextField>
-                </Box>
+                {/* Date & Category (Hide in Recipe Mode) */}
+                {!isRecipeMode && (
+                    <Box sx={{ display: 'flex', gap: 2, my: 2 }}>
+                        <TextField type="date" label="Date" value={date}
+                            onChange={e => setDate(e.target.value)} size="small"
+                            InputLabelProps={{ shrink: true }} sx={{ flex: 1 }} />
+                        <TextField select label="Category" value={categoryId}
+                            onChange={e => setCategoryId(e.target.value)} size="small"
+                            SelectProps={{ native: true }} sx={{ flex: 1 }}>
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </TextField>
+                    </Box>
+                )}
 
 
             </DialogContent>
 
             <DialogActions sx={{ p: 2, gap: 1 }}>
+                {initialMeal && (
+                    <Button onClick={handleDelete} color="error" startIcon={<DeleteIcon />}>
+                        Delete
+                    </Button>
+                )}
+                <Box sx={{ flex: 1 }} />
                 <Button onClick={resetAndClose} disabled={isSaving}>Cancel</Button>
                 <Button onClick={handleAdd} variant="contained" disabled={isSaving}
                     sx={{ bgcolor: 'warning.main', '&:hover': { bgcolor: 'warning.dark' } }}>

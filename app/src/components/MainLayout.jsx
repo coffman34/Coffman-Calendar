@@ -112,6 +112,8 @@ const MainLayout = ({ children, onModuleSelect, currentModule }) => {
                 bgcolor: 'background.default',
                 p: 2,
                 gap: 2,
+                // JUNIOR DEV NOTE: Full-width, left-justified layout.
+                // Previously had maxWidth and mr:'auto' which caused centering.
             }}
         >
             {/* Screensaver overlay (shown when idle) */}
@@ -150,7 +152,8 @@ const MainLayout = ({ children, onModuleSelect, currentModule }) => {
                         width: 80,
                         flexShrink: 0,
                         borderRadius: 2,
-                        bgcolor: '#F9FAFB',
+                        bgcolor: 'background.paper', // Match AppCard
+                        border: '1px solid rgba(0,0,0,0.05)', // Match AppCard
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',

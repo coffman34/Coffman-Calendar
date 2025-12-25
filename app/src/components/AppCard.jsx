@@ -28,7 +28,8 @@ const AppCard = ({ title, children, action, gradient, sx = {} }) => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        background: gradient || 'transparent'
+                        background: gradient || 'transparent',
+                        minHeight: 72, // Standardize header height preventing layout jumps
                     }}
                 >
                     <Typography

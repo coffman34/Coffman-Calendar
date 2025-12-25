@@ -14,8 +14,7 @@ import {
     Dialog, DialogContent, Box, Typography, IconButton, Button, Divider, Chip
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import SettingsIcon from '@mui/icons-material/Settings'; // Gear Icon
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -68,7 +67,7 @@ const RecipeDetailPopup = ({
     if (!meal) return null;
 
     const formattedDate = dateKey ? format(parseISO(dateKey), 'EEEE, MMMM d') : '';
-    const hasSteps = meal.steps && meal.steps.length > 0;
+    const canCook = (meal.steps && meal.steps.length > 0) || (meal.instructions && meal.instructions.length > 0);
     const hasIngredients = meal.ingredients && meal.ingredients.length > 0;
 
     const handlePreference = (pref) => {
@@ -94,9 +93,8 @@ const RecipeDetailPopup = ({
                         <Box sx={{ flex: 1 }}>
                             <Typography variant="h5" fontWeight="bold">{meal.name}</Typography>
                             <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                                <Button size="small" startIcon={<EditIcon />} onClick={() => onEdit?.(meal)}>Edit</Button>
-                                <Button size="small" startIcon={<DeleteIcon />} color="error" onClick={() => onDelete?.(meal)}>Delete</Button>
-                                {hasSteps && (
+                                {/* JUNIOR DEV NOTE: Edit/Delete moved to Gear Icon (Edit Mode) */}
+                                {canCook && (
                                     <Button
                                         size="small"
                                         variant="contained"
@@ -109,7 +107,14 @@ const RecipeDetailPopup = ({
                                 )}
                             </Box>
                         </Box>
-                        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+                        <Box>
+                            {onEdit && (
+                                <IconButton onClick={() => onEdit(meal)} sx={{ color: 'text.secondary' }}>
+                                    <SettingsIcon />
+                                </IconButton>
+                            )}
+                            <IconButton onClick={onClose}><CloseIcon /></IconButton>
+                        </Box>
                     </Box>
 
                     {/* Preference Buttons */}

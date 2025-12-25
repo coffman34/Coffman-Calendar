@@ -208,15 +208,17 @@ const WeatherWidget = () => {
                 onClick={refetch}
                 sx={{
                     cursor: 'pointer',
-                    bgcolor: 'rgba(100, 150, 200, 0.15)',
+                    bgcolor: '#FFFFFF',
                     borderRadius: 2,
                     px: 2,
                     py: 1,
                     minWidth: 280,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                     opacity: isStale ? 0.8 : 1,
                     transition: 'all 0.2s ease',
                     '&:hover': {
-                        bgcolor: 'rgba(100, 150, 200, 0.25)',
+                        bgcolor: '#fafafa',
+                        transform: 'scale(1.01)',
                     }
                 }}
             >
@@ -244,7 +246,7 @@ const WeatherWidget = () => {
                         sx={{
                             display: 'flex',
                             justifyContent: 'space-between',
-                            borderTop: '1px solid rgba(255,255,255,0.1)',
+                            borderTop: '1px solid rgba(0,0,0,0.05)',
                             pt: 1,
                         }}
                     >

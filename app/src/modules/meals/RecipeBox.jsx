@@ -26,6 +26,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useMealCategories } from './useMealCategories';
 import { useMeals } from './useMeals';
 import { searchRecipes, getRecipeDetails, isApiConfigured } from '../../services/recipeApi';
@@ -114,7 +115,7 @@ const DraggableRecipeItem = ({ recipe, onClick }) => {
  * - Added drag-and-drop support for recipes
  * - Styled as a persistent sidebar panel
  */
-const RecipeBox = ({ onSelectRecipe }) => {
+const RecipeBox = ({ onSelectRecipe, onPreviewRecipe }) => {
     const { categories } = useMealCategories();
     const { recipes, saveRecipe } = useMeals();
 
@@ -127,6 +128,7 @@ const RecipeBox = ({ onSelectRecipe }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [apiEnabled, setApiEnabled] = useState(null);
     const [savingId, setSavingId] = useState(null);
+    const [previewingId, setPreviewingId] = useState(null);
 
     // Check API status on mount
     React.useEffect(() => {
@@ -171,6 +173,21 @@ const RecipeBox = ({ onSelectRecipe }) => {
         }
     };
 
+    /**
+     * Preview API recipe details
+     */
+    const handlePreview = async (result) => {
+        setPreviewingId(result.spoonacularId);
+        try {
+            const fullRecipe = await getRecipeDetails(result.spoonacularId);
+            onPreviewRecipe?.(fullRecipe);
+        } catch (err) {
+            console.error('Failed to preview recipe:', err);
+        } finally {
+            setPreviewingId(null);
+        }
+    };
+
     const filtered = filterCat ? safeRecipes.filter(r => r.categoryId === filterCat) : safeRecipes;
     const showingSearch = searchQuery.trim().length > 0 && apiEnabled;
 
@@ -184,7 +201,8 @@ const RecipeBox = ({ onSelectRecipe }) => {
                 p: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                bgcolor: 'background.default',
+                bgcolor: '#FFFFFF',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
             }}
         >
             {/* Header */}
@@ -269,11 +287,21 @@ const RecipeBox = ({ onSelectRecipe }) => {
                                 </Box>
                                 <Button
                                     size="small"
+                                    startIcon={<VisibilityIcon />}
+                                    onClick={() => handlePreview(r)}
+                                    disabled={previewingId === r.spoonacularId}
+                                    sx={{ minWidth: 0, px: 1 }}
+                                >
+                                    {previewingId === r.spoonacularId ? '...' : ''}
+                                </Button>
+                                <Button
+                                    size="small"
                                     startIcon={<BookmarkAddIcon />}
                                     onClick={() => handleSaveToFamily(r)}
                                     disabled={savingId === r.spoonacularId}
+                                    sx={{ minWidth: 0, px: 1 }}
                                 >
-                                    {savingId === r.spoonacularId ? 'Saving...' : 'Save'}
+                                    {savingId === r.spoonacularId ? '...' : ''}
                                 </Button>
                             </Box>
                         ))
@@ -289,13 +317,13 @@ const RecipeBox = ({ onSelectRecipe }) => {
                             <DraggableRecipeItem
                                 key={r.id}
                                 recipe={r}
-                                onClick={() => onSelectRecipe?.(r)}
+                                onClick={() => onPreviewRecipe?.(r)}
                             />
                         ))
                     )
                 )}
             </List>
-        </Paper>
+        </Paper >
     );
 };
 

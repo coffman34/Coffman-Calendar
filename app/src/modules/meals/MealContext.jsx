@@ -321,6 +321,24 @@ export default function MealProvider({ children }) {
         setRecipes(prev => {
             // Defensive: ensure prev is an array
             const safePrev = Array.isArray(prev) ? prev : [];
+
+            // Version Control: Create snapshot if updating existing recipe
+            const existing = safePrev.find(r => r.id === newRecipe.id);
+            if (existing) {
+                const snapshot = {
+                    versionTimestamp: Date.now(),
+                    updatedAt: new Date().toISOString(),
+                    name: existing.name,
+                    ingredients: existing.ingredients,
+                    instructions: existing.instructions,
+                    steps: existing.steps,
+                    youtubeUrl: existing.youtubeUrl,
+                    categoryId: existing.categoryId
+                };
+                // Keep last 10 versions
+                newRecipe.history = [snapshot, ...(existing.history || [])].slice(0, 10);
+            }
+
             return [
                 ...safePrev.filter(r => r.id !== newRecipe.id), // Remove old version if exists
                 newRecipe, // Add new version

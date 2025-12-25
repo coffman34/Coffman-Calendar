@@ -192,6 +192,7 @@ const RewardsManager = ({ open, onClose, onSave }) => {
                                     <ListItem key={r.id} divider>
                                         <ListItemText
                                             primary={`${r.icon} ${r.title}`}
+                                            secondaryTypographyProps={{ component: 'div' }}
                                             secondary={
                                                 <Chip
                                                     label={`${r.cost} Gold`}

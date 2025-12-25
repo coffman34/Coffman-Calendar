@@ -18,6 +18,7 @@
 
 import React, { useState } from 'react';
 import { Box, Typography, IconButton, Button, Menu, MenuItem, Skeleton, Grid } from '@mui/material';
+import AppCard from '../../components/AppCard';
 import { format } from 'date-fns';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -189,61 +190,25 @@ const CalendarView = () => {
 
     const currentViewLabel = VIEW_OPTIONS.find(v => v.key === viewMode)?.label || 'Week';
 
-    return (
-        <Box
-            ref={containerRef}
-            sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                touchAction: 'pan-y', // Allow vertical scrolling, horizontal for swipe
-            }}
-        >
-            {/* Header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, px: 2, pt: 2 }}>
-                <Box>
-                    <Typography variant="h4" fontWeight="bold">
-                        {format(currentDate, 'MMMM d')}
-                        <Typography component="span" variant="h4" sx={{ ml: 2, fontWeight: 300 }}>
-                            {format(currentTime, 'HH:mm')}
-                        </Typography>
-                    </Typography>
-                </Box>
+    // Header Title Component
+    const HeaderTitle = (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Typography variant="h4" fontWeight="bold">
+                {format(currentDate, 'MMMM d')}
+            </Typography>
+            <Typography variant="h4" sx={{ ml: 2, fontWeight: 300, color: 'text.secondary' }}>
+                {format(currentTime, 'HH:mm')}
+            </Typography>
+        </Box>
+    );
 
-                {/* View mode selector */}
-                <Button
-                    endIcon={<ExpandMoreIcon />}
-                    onClick={(e) => setMenuAnchor(e.currentTarget)}
-                    variant="outlined"
-                    size="small"
-                >
-                    {currentViewLabel}
-                </Button>
-                <Menu
-                    anchorEl={menuAnchor}
-                    open={Boolean(menuAnchor)}
-                    onClose={() => setMenuAnchor(null)}
-                >
-                    {VIEW_OPTIONS.map(opt => (
-                        <MenuItem
-                            key={opt.key}
-                            selected={viewMode === opt.key}
-                            onClick={() => {
-                                setViewMode(opt.key);
-                                setMenuAnchor(null);
-                            }}
-                        >
-                            {opt.label}
-                        </MenuItem>
-                    ))}
-                </Menu>
-            </Box>
-
-            {/* Navigation controls */}
-            <Box sx={{ display: 'flex', alignItems: 'center', px: 2, mb: 1 }}>
-                <Button startIcon={<TodayIcon />} onClick={goToToday} size="small">
-                    Today
-                </Button>
+    // Header Actions Component
+    const HeaderActions = (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button startIcon={<TodayIcon />} onClick={goToToday} size="small" variant="text">
+                Today
+            </Button>
+            <Box sx={{ display: 'flex', mr: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 1 }}>
                 <IconButton onClick={() => navigate(-1)} size="small">
                     <ArrowBackIosNewIcon fontSize="small" />
                 </IconButton>
@@ -251,9 +216,51 @@ const CalendarView = () => {
                     <ArrowForwardIosIcon fontSize="small" />
                 </IconButton>
             </Box>
+            <Button
+                endIcon={<ExpandMoreIcon />}
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+                variant="outlined"
+                size="small"
+                sx={{ borderRadius: 2 }}
+            >
+                {currentViewLabel}
+            </Button>
+            <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={() => setMenuAnchor(null)}
+            >
+                {VIEW_OPTIONS.map(opt => (
+                    <MenuItem
+                        key={opt.key}
+                        selected={viewMode === opt.key}
+                        onClick={() => {
+                            setViewMode(opt.key);
+                            setMenuAnchor(null);
+                        }}
+                    >
+                        {opt.label}
+                    </MenuItem>
+                ))}
+            </Menu>
+        </Box>
+    );
 
-            {/* Calendar view */}
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+    return (
+        <AppCard
+            title={HeaderTitle}
+            action={HeaderActions}
+            sx={{ height: '100%' }}
+        >
+            <Box
+                ref={containerRef}
+                sx={{
+                    flex: 1,
+                    overflow: 'hidden',
+                    touchAction: 'pan-y',
+                    p: 1
+                }}
+            >
                 {renderView()}
             </Box>
 
@@ -265,7 +272,7 @@ const CalendarView = () => {
                 selectedDate={selectedDate || (editingEvent ? editingEvent.date : new Date())}
                 initialEvent={editingEvent}
             />
-        </Box>
+        </AppCard>
     );
 };
 

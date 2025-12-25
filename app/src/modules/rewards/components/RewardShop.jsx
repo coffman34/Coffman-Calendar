@@ -24,7 +24,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
  */
 const RewardShop = ({ items, userGold, onPurchase }) => {
     return (
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <Paper sx={{ p: 2, mb: 2, bgcolor: '#FFFFFF', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <ShoppingCartIcon color="primary" />
                 <Typography variant="h6" fontWeight="bold">
@@ -48,6 +48,7 @@ const RewardShop = ({ items, userGold, onPurchase }) => {
                                     sx={{
                                         p: 1.5,
                                         textAlign: 'center',
+                                        bgcolor: '#FFFFFF',
                                         opacity: canAfford ? 1 : 0.6,
                                         transition: 'transform 0.2s',
                                         '&:hover': { transform: canAfford ? 'scale(1.02)' : 'none' }

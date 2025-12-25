@@ -32,7 +32,7 @@ const RedemptionLog = ({ redemptions }) => {
     if (redemptions.length === 0) return null;
 
     return (
-        <Paper sx={{ p: 2 }}>
+        <Paper sx={{ p: 2, bgcolor: '#FFFFFF', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <HistoryIcon color="primary" />
                 <Typography variant="h6" fontWeight="bold">
