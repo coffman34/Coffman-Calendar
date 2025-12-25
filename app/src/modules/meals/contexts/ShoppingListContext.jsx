@@ -135,12 +135,46 @@ export function ShoppingListProvider({ children }) {
         })).filter(group => group.items.length > 0);
     }, [shoppingList.items]);
 
+    /**
+     * Add a manual item to the list
+     */
+    const addItem = useCallback((name) => {
+        const newItem = {
+            id: `manual-${Date.now()}`,
+            name,
+            amount: 1,
+            unit: 'item',
+            aisle: 'misc', // Default aisle, could use a classifier later
+            checked: false,
+            sourceRecipes: ['Manual']
+        };
+
+        setShoppingList(prev => ({
+            ...prev,
+            items: [...prev.items, newItem]
+        }));
+    }, []);
+
+    /**
+     * Delete an item from the list
+     */
+    const deleteItem = useCallback((itemId) => {
+        setShoppingList(prev => ({
+            ...prev,
+            items: prev.items.filter(item => item.id !== itemId)
+        }));
+    }, []);
+
     const value = {
         shoppingList,
         generateFromMeals,
         toggleItem,
         clearList,
+        toggleItem,
+        clearList,
         getGroupedItems,
+        addItem,
+        deleteItem,
     };
 
     return (

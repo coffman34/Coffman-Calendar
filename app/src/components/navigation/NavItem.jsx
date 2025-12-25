@@ -70,11 +70,18 @@ const NavItem = ({ item, isActive, onClick }) => {
                 cursor: 'pointer',
                 borderRadius: 2,
                 // Active state styling
-                bgcolor: isActive ? 'rgba(239, 154, 154, 0.3)' : 'transparent',
-                color: isActive ? 'primary.main' : 'text.secondary',
+                bgcolor: isActive ? 'primary.main' : 'transparent',
+                color: isActive ? '#fff' : 'text.secondary',
+                // Added opacity to background for active state to make it look "glassy"
+                ...(isActive && {
+                    bgcolor: 'primary.main',
+                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                    boxShadow: (theme) => `0 4px 12px ${theme.palette.primary.main}40`,
+                }),
                 // Hover effect
                 '&:hover': {
-                    bgcolor: isActive ? 'rgba(239, 154, 154, 0.3)' : 'action.hover',
+                    bgcolor: isActive ? 'primary.main' : 'action.hover',
+                    opacity: 0.9
                 },
                 // Smooth transitions
                 transition: 'all 0.2s ease-in-out',

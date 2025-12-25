@@ -206,7 +206,7 @@ const RecipeBox = ({ onSelectRecipe, onPreviewRecipe }) => {
             }}
         >
             {/* Header */}
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 1.5 }}>
+            <Typography variant="h6" fontWeight="bold" sx={{ mb: 1.5, color: 'primary.main' }}>
                 📖 Recipe Box
             </Typography>
 

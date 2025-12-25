@@ -140,11 +140,20 @@ const MealPlanGrid = ({ onCellTap, onMealTap, onRecipeDrop, onMealMove }) => {
                 {days.map((day) => {
                     const isToday = isSameDay(day, new Date());
                     return (
-                        <Box key={day.toString()} sx={{ textAlign: 'center', py: 1 }}>
+                        <Box key={day.toString()} sx={{
+                            textAlign: 'center',
+                            py: 1,
+                            ...(isToday && {
+                                bgcolor: 'primary.main',
+                                background: (theme) => `linear-gradient(180deg, ${theme.palette.primary.main}15 0%, transparent 100%)`,
+                                borderTopLeftRadius: 8,
+                                borderTopRightRadius: 8,
+                            })
+                        }}>
                             <Typography variant="caption" color="text.secondary">{format(day, 'EEE')}</Typography>
                             <Typography variant="body2" fontWeight={isToday ? 'bold' : 'normal'}
                                 sx={{
-                                    bgcolor: isToday ? '#FF6B35' : 'transparent', color: isToday ? '#fff' : 'inherit',
+                                    bgcolor: isToday ? 'primary.main' : 'transparent', color: isToday ? '#fff' : 'inherit',
                                     borderRadius: '50%', width: 28, height: 28, display: 'inline-flex',
                                     alignItems: 'center', justifyContent: 'center', mx: 'auto'
                                 }}>
@@ -187,7 +196,10 @@ const MealPlanGrid = ({ onCellTap, onMealTap, onRecipeDrop, onMealMove }) => {
                                 sx={{
                                     borderRadius: 1,
                                     minHeight: 80,
-                                    bgcolor: isDragTarget ? 'primary.light' : '#FFFFFF',
+                                    bgcolor: isDragTarget ? 'primary.main' : '#FFFFFF',
+                                    ...(isDragTarget && {
+                                        bgcolor: (theme) => `${theme.palette.primary.main}15`,
+                                    }),
                                     position: 'relative',
                                     border: vetoNames
                                         ? '2px solid #ff9800'

@@ -99,8 +99,9 @@ const RecipeDetailPopup = ({
                                         size="small"
                                         variant="contained"
                                         startIcon={<PlayArrowIcon />}
+                                        color="primary"
                                         onClick={() => setCookModeOpen(true)}
-                                        sx={{ bgcolor: '#ff6b35', '&:hover': { bgcolor: '#e55a2b' } }}
+                                        sx={{ minHeight: 40 }}
                                     >
                                         Start Cooking
                                     </Button>

@@ -178,6 +178,7 @@ const MealsView = () => {
                 startIcon={<ShoppingCartIcon />}
                 onClick={handleGenerateShoppingList}
                 size="small"
+                color="primary"
             >
                 Generate List
             </Button>
@@ -187,9 +188,12 @@ const MealsView = () => {
 
     return (
         <AppCard
-            title="Meal Planning"
+            title="🍽️ Meal Planning"
             action={HeaderActions}
-            sx={{ height: '100%' }}
+            sx={{
+                height: '100%',
+                '& .MuiTypography-h6': { color: 'primary.main', fontWeight: 'bold' }
+            }}
         >
             {/* Main Content - Grid + Always-Visible Recipe Box */}
             <Box sx={{ display: 'flex', flex: 1, gap: 2, overflow: 'hidden', p: 2 }}>

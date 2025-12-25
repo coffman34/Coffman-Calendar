@@ -58,8 +58,8 @@ const MealSection = ({ day }) => {
         <>
             <Box sx={{ p: 1, borderBottom: '1px solid #eee', bgcolor: 'rgba(255,152,0,0.05)' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                    <RestaurantIcon sx={{ fontSize: 14, color: 'warning.main' }} />
-                    <Typography variant="caption" fontWeight="bold" color="warning.main">Meals</Typography>
+                    <RestaurantIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+                    <Typography variant="caption" fontWeight="bold" color="primary.main">Meals</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {allMeals.map((meal) => (

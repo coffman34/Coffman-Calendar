@@ -172,7 +172,7 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
 
             {/* Header */}
             <Box sx={{ p: 2, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
-                <Typography variant="h6" fontWeight="bold">Add Meal</Typography>
+                <Typography variant="h6" fontWeight="bold" color="primary.main">Add Meal</Typography>
             </Box>
 
             <DialogContent sx={{ p: 2 }}>
@@ -286,7 +286,7 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
                 <Box sx={{ flex: 1 }} />
                 <Button onClick={resetAndClose} disabled={isSaving}>Cancel</Button>
                 <Button onClick={handleAdd} variant="contained" disabled={isSaving}
-                    sx={{ bgcolor: 'warning.main', '&:hover': { bgcolor: 'warning.dark' } }}>
+                    color="primary">
                     {isSaving ? 'Saving...' : (initialMeal ? 'Save Changes' : 'Add Meal')}
                 </Button>
             </DialogActions>

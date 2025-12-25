@@ -270,6 +270,9 @@ export const setCalendarsInStorage = (calendars) => setItem(STORAGE_KEYS.CALENDA
 export const getPhotosFromStorage = () => getItem(STORAGE_KEYS.PHOTOS, {});
 export const setPhotosInStorage = (photos) => setItem(STORAGE_KEYS.PHOTOS, photos);
 
+export const getTaskListsFromStorage = () => getItem(STORAGE_KEYS.TASK_LISTS, {});
+export const setTaskListsInStorage = (taskLists) => setItem(STORAGE_KEYS.TASK_LISTS, taskLists);
+
 export const getLastUserIdFromStorage = () => getItem(STORAGE_KEYS.LAST_USER_ID, null);
 export const setLastUserIdInStorage = (userId) => setItem(STORAGE_KEYS.LAST_USER_ID, userId);
 

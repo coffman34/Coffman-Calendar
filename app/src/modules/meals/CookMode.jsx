@@ -250,7 +250,7 @@ const CookMode = ({ open, onClose, recipe }) => {
             {/* Timer Display */}
             {timerSeconds > 0 && (
                 <Box sx={{
-                    position: 'fixed', top: 80, right: 24, bgcolor: '#ff6b35',
+                    position: 'fixed', top: 80, right: 24, bgcolor: 'primary.main',
                     borderRadius: 2, px: 3, py: 1, boxShadow: 3
                 }}>
                     <Typography variant="h4" fontWeight="bold">{formatTime(timerSeconds)}</Typography>

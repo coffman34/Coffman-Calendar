@@ -17,15 +17,19 @@
 import React, { useState } from 'react';
 import {
     Box, Typography, Paper, List, CircularProgress, Alert,
-    Button, Fab
+    Button, Fab, IconButton
 } from '@mui/material';
 import AppCard from '../../components/AppCard';
 import AddIcon from '@mui/icons-material/Add';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useUser } from '../../modules/users/useUser';
+import { useGoogleAuth } from '../../modules/users/contexts/useGoogleAuth';
 import { useUI } from '../ui/useUI';
 import { useLocalTasks } from './hooks/useLocalTasks';
 import LocalTaskItem from './components/LocalTaskItem';
 import AddTaskModal from './components/AddTaskModal';
+import TaskSettingsPopover from './components/TaskSettingsPopover';
+import GoogleTaskList from './components/GoogleTaskList';
 
 const TasksView = () => {
     // ========================================================================
@@ -34,6 +38,7 @@ const TasksView = () => {
 
     const { currentUser } = useUser();
     const { showNotification } = useUI();
+    const { getSelectedTaskLists } = useGoogleAuth();
 
     // All tasks are local with XP/Gold
     const {
@@ -45,8 +50,12 @@ const TasksView = () => {
         deleteLocalTask
     } = useLocalTasks(currentUser?.id, showNotification);
 
-    // Modal state
+    // Modal/Popover state
     const [addModalOpen, setAddModalOpen] = useState(false);
+    const [settingsAnchor, setSettingsAnchor] = useState(null);
+
+    // Get subscribed Google Task Lists for this user
+    const subscribedLists = currentUser ? getSelectedTaskLists(currentUser.id) || [] : [];
 
     // ========================================================================
     // HANDLERS
@@ -72,16 +81,23 @@ const TasksView = () => {
     // RENDER
     // ========================================================================
 
-
+    // JUNIOR DEV NOTE: 
+    // Gear icon opens TaskSettingsPopover to subscribe to Google Task Lists
+    // This lets users sync their gamified tasks with Google
     const HeaderActions = (
-        <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setAddModalOpen(true)}
-            size="small"
-        >
-            Add Task
-        </Button>
+        <Box display="flex" gap={1}>
+            <IconButton onClick={(e) => setSettingsAnchor(e.currentTarget)}>
+                <SettingsIcon />
+            </IconButton>
+            <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setAddModalOpen(true)}
+                size="small"
+            >
+                Add Task
+            </Button>
+        </Box>
     );
 
     return (
@@ -146,6 +162,16 @@ const TasksView = () => {
                         )}
                     </List>
                 </Paper>
+
+                {/* Subscribed Google Task Lists */}
+                {/* JUNIOR DEV NOTE: These are Google lists the user has subscribed to via settings */}
+                {subscribedLists.map(list => (
+                    <GoogleTaskList
+                        key={list.id}
+                        list={list}
+                        userId={currentUser.id}
+                    />
+                ))}
             </Box>
 
             {/* Add Task Modal */}
@@ -153,6 +179,14 @@ const TasksView = () => {
                 open={addModalOpen}
                 onClose={() => setAddModalOpen(false)}
                 onSave={handleAddTask}
+                currentUserId={currentUser.id}
+            />
+
+            {/* Settings Popover - Sync to Google Task Lists */}
+            <TaskSettingsPopover
+                open={Boolean(settingsAnchor)}
+                anchorEl={settingsAnchor}
+                onClose={() => setSettingsAnchor(null)}
                 currentUserId={currentUser.id}
             />
         </AppCard>

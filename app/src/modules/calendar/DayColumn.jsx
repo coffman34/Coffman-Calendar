@@ -27,11 +27,12 @@ const DayColumn = ({ day, events, onAddEvent, onEditEvent, onDeleteEvent }) => {
                 borderRadius: 2,
                 m: 1, // Increased gutter (8px) per user request
                 overflow: 'hidden',
-                border: isToday ? '2px solid #FF6B35' : '1px solid rgba(0,0,0,0.08)',
+                border: isToday ? '2px solid' : '1px solid rgba(0,0,0,0.08)',
+                borderColor: isToday ? 'primary.main' : 'rgba(0,0,0,0.08)',
                 position: 'relative',
                 zIndex: isToday ? 1 : 0,
                 transition: 'all 0.3s ease',
-                boxShadow: isToday ? '0 4px 16px rgba(255,107,53,0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
+                boxShadow: isToday ? '0 4px 16px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.06)',
                 '&:hover': {
                     transform: 'translateY(-2px)',
                     boxShadow: '0 6px 20px rgba(0,0,0,0.1)'
@@ -49,7 +50,7 @@ const DayColumn = ({ day, events, onAddEvent, onEditEvent, onDeleteEvent }) => {
                 <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Typography variant="h6" fontWeight={isToday ? 'bold' : 'normal'}
                         sx={{
-                            color: isToday ? '#fff' : 'text.primary', bgcolor: isToday ? '#FF6B35' : 'transparent',
+                            color: isToday ? '#fff' : 'text.primary', bgcolor: isToday ? 'primary.main' : 'transparent',
                             borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
                         {format(day, 'd')}

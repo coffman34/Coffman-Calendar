@@ -197,7 +197,7 @@ const RewardsManager = ({ open, onClose, onSave }) => {
                                                 <Chip
                                                     label={`${r.cost} Gold`}
                                                     size="small"
-                                                    color="warning"
+                                                    color="primary"
                                                     variant="outlined"
                                                 />
                                             }

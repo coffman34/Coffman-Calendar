@@ -63,7 +63,7 @@ const RewardShop = ({ items, userGold, onPurchase }) => {
                                     <Chip
                                         label={`${item.cost} G`}
                                         size="small"
-                                        color="warning"
+                                        color="primary"
                                         sx={{ my: 1 }}
                                     />
                                     <Button

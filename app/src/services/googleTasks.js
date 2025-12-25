@@ -234,3 +234,49 @@ export const deleteTask = async (accessToken, taskListId, taskId) => {
         throw new Error('Could not delete task. Please try again.');
     }
 };
+
+/**
+ * Creates a new task list
+ * 
+ * @param {string} accessToken - OAuth2 access token
+ * @param {string} title - Title of the new list
+ * @returns {Promise<Object>} Created task list object
+ */
+export const createTaskList = async (accessToken, title) => {
+    const client = createGoogleApiClient(accessToken);
+    const url = `${API_ENDPOINTS.GOOGLE_TASKS}/users/@me/lists`;
+
+    try {
+        const list = await client.post(url, { title });
+        return list;
+    } catch (error) {
+        if (isTokenExpiredError(error)) {
+            throw error;
+        }
+        console.error('Failed to create task list:', error);
+        throw new Error('Could not create task list. Please try again.');
+    }
+};
+
+/**
+ * Deletes a task list
+ * 
+ * @param {string} accessToken - OAuth2 access token
+ * @param {string} taskListId - ID of the list to delete
+ * @returns {Promise<boolean>} True if successful
+ */
+export const deleteTaskList = async (accessToken, taskListId) => {
+    const client = createGoogleApiClient(accessToken);
+    const url = `${API_ENDPOINTS.GOOGLE_TASKS}/users/@me/lists/${taskListId}`;
+
+    try {
+        await client.delete(url);
+        return true;
+    } catch (error) {
+        if (isTokenExpiredError(error)) {
+            throw error;
+        }
+        console.error('Failed to delete task list:', error);
+        throw new Error('Could not delete task list. Please try again.');
+    }
+};

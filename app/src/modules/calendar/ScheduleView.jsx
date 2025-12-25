@@ -79,7 +79,7 @@ const ScheduleView = ({ currentDate, onEditEvent, onDeleteEvent }) => {
                                 fontWeight={isToday ? 'bold' : 'normal'}
                                 sx={{
                                     color: isToday ? '#fff' : 'text.primary',
-                                    bgcolor: isToday ? '#FF6B35' : 'transparent',
+                                    bgcolor: isToday ? 'primary.main' : 'transparent',
                                     borderRadius: '50%',
                                     width: 32,
                                     height: 32,
@@ -128,7 +128,7 @@ const ScheduleView = ({ currentDate, onEditEvent, onDeleteEvent }) => {
                         width: `${100 / daysToShow}%`,
                         top: timeBarTop,
                         height: 2,
-                        bgcolor: '#FF6B35',
+                        bgcolor: 'primary.main',
                         zIndex: 10,
                     }} />
                 )}

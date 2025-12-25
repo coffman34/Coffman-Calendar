@@ -28,7 +28,7 @@ const DayView = ({ currentDate, events = [], onAddEvent, onEditEvent }) => {
             {/* Day Header */}
             <Box sx={{ p: 2, borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{
-                    bgcolor: isToday ? '#FF6B35' : 'grey.200',
+                    bgcolor: isToday ? 'primary.main' : 'grey.200',
                     color: isToday ? '#fff' : 'text.primary',
                     borderRadius: '50%',
                     width: 48,
@@ -62,7 +62,7 @@ const DayView = ({ currentDate, events = [], onAddEvent, onEditEvent }) => {
                         right: 0,
                         top: timeBarTop,
                         height: 2,
-                        bgcolor: '#FF6B35',
+                        bgcolor: 'primary.main',
                         zIndex: 10,
                         pointerEvents: 'none',
                         '&::before': {
@@ -73,7 +73,7 @@ const DayView = ({ currentDate, events = [], onAddEvent, onEditEvent }) => {
                             width: 10,
                             height: 10,
                             borderRadius: '50%',
-                            bgcolor: '#FF6B35',
+                            bgcolor: 'primary.main',
                         }
                     }} />
                 )}

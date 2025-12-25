@@ -59,7 +59,7 @@ const MonthView = ({ currentDate, events = [], onDayClick, onAddEvent }) => {
                                         bgcolor: isCurrentMonth ? 'background.paper' : 'grey.50',
                                         opacity: isCurrentMonth ? 1 : 0.5,
                                         border: '1px solid',
-                                        borderColor: isToday ? '#FF6B35' : 'divider',
+                                        borderColor: isToday ? 'primary.main' : 'divider',
                                         '&:hover': { bgcolor: 'action.hover' },
                                     }}
                                 >
@@ -73,7 +73,7 @@ const MonthView = ({ currentDate, events = [], onDayClick, onAddEvent }) => {
                                             }}
                                             sx={{
                                                 color: isToday ? '#fff' : 'text.primary',
-                                                bgcolor: isToday ? '#FF6B35' : 'transparent',
+                                                bgcolor: isToday ? 'primary.main' : 'transparent',
                                                 borderRadius: '50%',
                                                 width: 28,
                                                 height: 28,

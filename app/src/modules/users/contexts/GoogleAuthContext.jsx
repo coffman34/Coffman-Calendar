@@ -18,7 +18,9 @@ import {
     getCalendarsFromStorage,
     setCalendarsInStorage,
     getPhotosFromStorage,
-    setPhotosInStorage
+    setPhotosInStorage,
+    getTaskListsFromStorage,
+    setTaskListsInStorage
 } from '../../../utils/storage';
 import { GoogleAuthContext } from './GoogleAuthContextCore';
 
@@ -32,6 +34,7 @@ export function GoogleAuthProvider({ children }) {
     // 1. Initial State from Storage
     const [googleTokens, setGoogleTokens] = useState(() => getAllGoogleTokens());
     const [selectedCalendars, setSelectedCalendars] = useState(() => getCalendarsFromStorage());
+    const [selectedTaskLists, setSelectedTaskListsState] = useState(() => getTaskListsFromStorage());
     const [userPhotos, setUserPhotosState] = useState(() => getPhotosFromStorage());
     const hasHandledCallback = useRef(false);
 
@@ -134,6 +137,13 @@ export function GoogleAuthProvider({ children }) {
         setUserPhotosState(prev => ({ ...prev, [userId]: taggedPhotos }));
     }, []);
 
+    // List subscription operations
+    const getSelectedTaskLists = useCallback((userId) => selectedTaskLists[userId] || [], [selectedTaskLists]);
+
+    const setSelectedTaskLists = useCallback((userId, lists) => {
+        setSelectedTaskListsState(prev => ({ ...prev, [userId]: lists }));
+    }, []);
+
     const getAllPhotos = useCallback(() => Object.values(userPhotos).flat(), [userPhotos]);
 
     // 4. Effects
@@ -164,6 +174,7 @@ export function GoogleAuthProvider({ children }) {
 
     /** Auto-persist data changes */
     useEffect(() => { setCalendarsInStorage(selectedCalendars); }, [selectedCalendars]);
+    useEffect(() => { setTaskListsInStorage(selectedTaskLists); }, [selectedTaskLists]);
     useEffect(() => { setPhotosInStorage(userPhotos); }, [userPhotos]);
 
     // 5. Context Value
@@ -180,6 +191,8 @@ export function GoogleAuthProvider({ children }) {
         getUserPhotos,
         setUserPhotos,
         getAllPhotos,
+        getSelectedTaskLists,
+        setSelectedTaskLists,
     };
 
     return (

@@ -142,10 +142,6 @@ const RewardsView = () => {
         }
     };
 
-    const handleBack = () => {
-        setViewingUser(null);
-        setSelectedCandidate(null);
-    };
 
     // ========================================================================
     // RENDER
@@ -181,9 +177,6 @@ const RewardsView = () => {
     // 2. DASHBOARD: Viewing Rewards for `viewingUser`
     const HeaderActions = (
         <Box>
-            <IconButton onClick={handleBack} sx={{ mr: 1 }}>
-                <Typography variant="caption" sx={{ mr: 1, fontWeight: 'bold' }}>BACK</Typography>
-            </IconButton>
             <IconButton
                 onClick={handleManagerAccess}
                 color="primary"

@@ -33,6 +33,7 @@ export const STORAGE_KEYS = {
     GOOGLE_TOKEN_PREFIX: 'google_token_', // Append user ID to this
     CARD_POSITIONS: 'coffman_calendar_card_positions',
     CARD_SETTINGS: 'coffman_calendar_card_settings',
+    TASK_LISTS: 'coffman_calendar_selected_task_lists',
 };
 
 // ============================================================================
