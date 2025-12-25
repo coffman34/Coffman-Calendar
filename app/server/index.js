@@ -16,6 +16,10 @@ import systemRoutes from './routes/systemRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import recipeRoutes from './routes/recipes.js';
 import weatherRoutes from './routes/weatherRoutes.js';
+// Gamification Routes (Stats & Rewards System)
+import statsRoutes from './routes/statsRoutes.js';
+import rewardsRoutes from './routes/rewardsRoutes.js';
+import localTasksRoutes from './routes/localTasksRoutes.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +60,10 @@ app.use('/api/system', systemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/weather', weatherRoutes);
+// Gamification Routes
+app.use('/api/stats', statsRoutes);
+app.use('/api/rewards', rewardsRoutes);
+app.use('/api/local-tasks', localTasksRoutes);
 
 
 // ===== ERROR HANDLING =====

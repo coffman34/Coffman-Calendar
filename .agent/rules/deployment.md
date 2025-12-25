@@ -9,7 +9,7 @@ description: Deployment rules for the Family Calendar kiosk
 
 - **Host**: `calendar` (SSH alias configured)
 - **User**: `coffman34`
-- **Sudo Password**: `1136849`
+- **Sudo Password**: REMOTE_SUDO_PASS
 
 ## Deployment Command
 

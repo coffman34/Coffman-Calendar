@@ -89,7 +89,46 @@ export const useTasks = (currentUser, getToken, connected, updateUserToken, show
             if (!token) throw new Error('No token');
 
             await updateTask(token, selectedListId, task.id, { status: newStatus, title: task.title });
-            showNotification(newStatus === 'completed' ? 'Task completed' : 'Task reopened', 'info');
+
+            // GAMIFICATION: Award or revoke XP/Gold based on completion direction
+            // ANTI-ABUSE: Completing = +XP/+Gold, Uncompleting = -XP/-Gold
+            if (currentUser?.id) {
+                const xpAmount = newStatus === 'completed' ? 10 : -10;
+                const goldAmount = newStatus === 'completed' ? 5 : -5;
+
+                try {
+                    // Update XP
+                    const xpResult = await fetch(`/api/stats/${currentUser.id}/xp`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount: xpAmount })
+                    }).then(r => r.json());
+
+                    // Update Gold
+                    await fetch(`/api/stats/${currentUser.id}/gold`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount: goldAmount })
+                    });
+
+                    // Show appropriate notification
+                    if (newStatus === 'completed') {
+                        if (xpResult.leveledUp) {
+                            showNotification(`🎉 Level Up! You're now Level ${xpResult.level}!`, 'success');
+                        } else {
+                            showNotification(`Task completed! +10 XP, +5 Gold`, 'success');
+                        }
+                    } else {
+                        showNotification('Task reopened', 'info');
+                    }
+                } catch (xpErr) {
+                    console.error('[useTasks] XP/Gold update failed:', xpErr);
+                    // Non-critical, still show basic notification
+                    showNotification(newStatus === 'completed' ? 'Task completed' : 'Task reopened', 'info');
+                }
+            } else {
+                showNotification(newStatus === 'completed' ? 'Task completed' : 'Task reopened', 'info');
+            }
         } catch (err) {
             if (err.message === 'TOKEN_EXPIRED') updateUserToken(currentUser.id, null);
             else showNotification('Failed to update task', 'error');

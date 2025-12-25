@@ -37,6 +37,8 @@ import AppCard from '../../components/AppCard';
 import PhotoPicker from '../../components/AlbumSelector';
 import ProfileManagement from './ProfileManagement';
 import CollageFrameManager from '../../components/CollageFrameManager';
+// Gamification Manager
+import RewardsManager from '../rewards/RewardsManager';
 
 const SettingsView = () => {
     const { currentUser, isUserConnected, googleTokens, users } = useUser();
@@ -59,6 +61,9 @@ const SettingsView = () => {
     // Reboot confirmation dialog state
     const [rebootDialogOpen, setRebootDialogOpen] = useState(false);
 
+    // Gamification manager dialog state
+    const [rewardsManagerOpen, setRewardsManagerOpen] = useState(false);
+
     if (!isUnlocked) {
         return <PinDialog onSuccess={verifyPin} title="Enter PIN to access Settings" />;
     }
@@ -71,6 +76,16 @@ const SettingsView = () => {
     };
 
     const selectedUser = users.find(u => u.id === editingUserId) || currentUser;
+
+    // DEFENSIVE: Handle case where no users exist yet
+    if (!selectedUser) {
+        return (
+            <Box p={3} textAlign="center">
+                <Typography>Loading user profiles...</Typography>
+            </Box>
+        );
+    }
+
     const isConnected = isUserConnected(selectedUser.id);
 
     return (
@@ -175,6 +190,24 @@ const SettingsView = () => {
                         </Box>
                     </AppCard>
                 </Grid>
+
+                {/* Gamification Settings */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <AppCard title="Gamification" gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+                        <Box p={3}>
+                            <Typography variant="body2" color="text.secondary" mb={2}>
+                                Manage reward shop items. Tasks earn XP and Gold when completed.
+                            </Typography>
+                            <Button
+                                variant="outlined"
+                                onClick={() => setRewardsManagerOpen(true)}
+                                sx={{ minHeight: 44 }}
+                            >
+                                Manage Rewards
+                            </Button>
+                        </Box>
+                    </AppCard>
+                </Grid>
             </Grid>
 
             {/* Change PIN Dialog */}
@@ -210,6 +243,12 @@ const SettingsView = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Rewards Manager Dialog */}
+            <RewardsManager
+                open={rewardsManagerOpen}
+                onClose={() => setRewardsManagerOpen(false)}
+            />
         </Box>
     );
 };

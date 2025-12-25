@@ -13,7 +13,7 @@ This document serves as the "source of truth" for architectural differences betw
 | **Frontend Port** | `80` (Vite Default) | `80` (Nginx) |
 | **Backend Port** | `3001` (Node/Express) | `3001` (Node/Express) |
 | **API Proxy** | Vite Proxy (`/api` → `:3001`) | Nginx Proxy (`/api` → `:3001`) |
-| **URL Pattern** | `http://localhost:5173` | `http://localhost` |
+| **URL Pattern** | `http://localhost` | `http://localhost:5173` |
 
 ### 🚨 Critical Rule: Relative API Paths
 

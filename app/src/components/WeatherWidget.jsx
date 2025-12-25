@@ -44,6 +44,12 @@ const useWeather = () => {
     const [lastUpdated, setLastUpdated] = useState(null);
     const isMountedRef = useRef(true);
 
+    // JUNIOR DEV NOTE: We use a ref to track if we have existing weather data
+    // This avoids putting `weather` in the useCallback deps which would cause
+    // an infinite loop: fetchWeatherData changes -> useEffect runs -> fetches -> 
+    // setWeather -> fetchWeatherData changes again (loop!)
+    const hasWeatherRef = useRef(false);
+
     const fetchWeatherData = useCallback(async (showLoading = true) => {
         if (showLoading) setLoading(true);
         setError(null);
@@ -56,13 +62,15 @@ const useWeather = () => {
             setLocation(result.location);
             setLastUpdated(new Date());
             setLoading(false);
+            hasWeatherRef.current = true;
         } catch (err) {
             console.error('[WeatherWidget] Fetch error:', err);
             if (!isMountedRef.current) return;
-            if (!weather) setError(err.message);
+            // Only show error if we don't have fallback data
+            if (!hasWeatherRef.current) setError(err.message);
             setLoading(false);
         }
-    }, [weather]);
+    }, []); // No deps - stable reference
 
     useEffect(() => {
         isMountedRef.current = true;

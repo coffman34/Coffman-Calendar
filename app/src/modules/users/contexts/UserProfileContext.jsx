@@ -28,13 +28,23 @@ import { UserProfileContext } from './UserProfileContextCore';
  */
 export function UserProfileProvider({ children }) {
     // 1. Initialize State
-    const [users, setUsers] = useState(() => getUsersFromStorage() || DEFAULT_USERS);
+    // JUNIOR DEV NOTE: We check for both null AND empty array
+    // because `[] || DEFAULT` won't work - empty array is truthy!
+    const [users, setUsers] = useState(() => {
+        const stored = getUsersFromStorage();
+        // If storage returned null/undefined OR an empty array, use defaults
+        return (stored && stored.length > 0) ? stored : DEFAULT_USERS;
+    });
 
     const [currentUser, setCurrentUser] = useState(() => {
         const storedId = getLastUserIdFromStorage();
-        if (!storedId) return users[0];
-        const foundUser = users.find(u => u.id === Number(storedId));
-        return foundUser || users[0];
+        // Get the user list (same logic as above for safety)
+        const userList = getUsersFromStorage();
+        const effectiveUsers = (userList && userList.length > 0) ? userList : DEFAULT_USERS;
+
+        if (!storedId) return effectiveUsers[0];
+        const foundUser = effectiveUsers.find(u => u.id === Number(storedId));
+        return foundUser || effectiveUsers[0];
     });
 
     // 2. Operations (Wrapped in useCallback)
@@ -71,12 +81,12 @@ export function UserProfileProvider({ children }) {
 
         setUsers(prev => prev.filter(user => user.id !== userId));
 
-        if (currentUser.id === userId) {
+        if (currentUser?.id === userId) {
             const remainingUser = users.find(u => u.id !== userId);
             setCurrentUser(remainingUser);
         }
         return true;
-    }, [users, currentUser.id]);
+    }, [users, currentUser?.id]);
 
     const getUserById = useCallback((userId) => {
         return users.find(u => u.id === userId) || null;
