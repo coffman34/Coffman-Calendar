@@ -1,13 +1,24 @@
 /**
- * @fileoverview Weekly Meal Planning Grid
+ * @fileoverview Weekly Meal Planning Grid with Drag-and-Drop Support
  * @module modules/meals/MealPlanGrid
  * 
  * JUNIOR DEV NOTE: This displays a 7-day grid with meal categories.
- * Now includes "Veto Warnings" - if any family member dislikes a
- * scheduled meal, a warning icon appears to alert the planner.
+ * 
+ * KEY FEATURES:
+ * 1. "Veto Warnings" - Shows warning if family member dislikes a meal
+ * 2. DRAG-AND-DROP - Two types supported:
+ *    a) Recipe drops from RecipeBox (adds new meal)
+ *    b) Meal moves within the grid (rearranges existing meals)
+ * 
+ * HOW DROP HANDLING WORKS:
+ * 1. onDragOver - Must call preventDefault() to allow drop
+ * 2. onDrop - Parses data and checks 'type' field:
+ *    - type: 'meal' -> Call onMealMove (move existing meal)
+ *    - no type -> Call onRecipeDrop (add from recipe box)
+ * 3. Visual feedback shows which cell is the drop target
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Paper, Tooltip } from '@mui/material';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -17,13 +28,29 @@ import { useMeals } from './useMeals';
 import { useRecipePreferences } from './contexts/RecipePreferencesContext';
 import { useUser } from '../users/useUser';
 
-const MealPlanGrid = ({ onCellTap, onMealTap }) => {
+/**
+ * MealPlanGrid Component
+ * 
+ * @param {Function} onCellTap - Called when empty cell is tapped
+ * @param {Function} onMealTap - Called when meal is tapped
+ * @param {Function} onRecipeDrop - Called when recipe is dropped (dateKey, categoryId, recipe)
+ * @param {Function} onMealMove - Called when meal is moved (sourceDateKey, sourceCategoryId, targetDateKey, targetCategoryId, meal)
+ */
+const MealPlanGrid = ({ onCellTap, onMealTap, onRecipeDrop, onMealMove }) => {
     const { visibleCategories } = useMealCategories();
     const { getMealsForDate } = useMeals();
     const { getDislikers } = useRecipePreferences();
     const { users } = useUser();
     const weekStart = startOfWeek(new Date());
     const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+    /**
+     * Track which cell is currently being dragged over
+     * 
+     * JUNIOR DEV NOTE: We use this state to show visual feedback.
+     * Format: "categoryId-dateKey" or null if not dragging over any cell.
+     */
+    const [dragOverCell, setDragOverCell] = useState(null);
 
     /**
      * Get names of users who dislike a meal (for veto warning tooltip)
@@ -36,6 +63,73 @@ const MealPlanGrid = ({ onCellTap, onMealTap }) => {
             .map(id => users?.find(u => u.id === id)?.name || 'Someone')
             .join(', ');
         return names;
+    };
+
+    /**
+     * Handle drag over - MUST prevent default to allow drop
+     * 
+     * JUNIOR DEV NOTE: The browser's default behavior is to NOT allow drops.
+     * We must call preventDefault() to override this.
+     */
+    const handleDragOver = (e, dateKey, categoryId) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setDragOverCell(`${categoryId}-${dateKey}`);
+    };
+
+    /**
+     * Handle drag leave - clear visual feedback
+     */
+    const handleDragLeave = () => {
+        setDragOverCell(null);
+    };
+
+    /**
+     * Handle drop - parse data and route to appropriate handler
+     * 
+     * JUNIOR DEV NOTE: We check the 'type' field to determine what was dropped:
+     * - type: 'meal' = An existing meal being moved (has source location)
+     * - no type = A recipe from RecipeBox (new meal to add)
+     */
+    const handleDrop = (e, dateKey, categoryId) => {
+        e.preventDefault();
+        setDragOverCell(null);
+
+        try {
+            const rawData = e.dataTransfer.getData('application/json');
+            if (!rawData) return;
+
+            const data = JSON.parse(rawData);
+
+            // Check if this is a meal move (has source location)
+            if (data.type === 'meal') {
+                console.log('DROP (Meal Move):', {
+                    source: `${data.sourceDateKey}/${data.sourceCategoryId}`,
+                    target: `${dateKey}/${categoryId}`,
+                    meal: data.meal
+                });
+
+                // Don't move to the same cell
+                if (data.sourceDateKey === dateKey && data.sourceCategoryId === categoryId) {
+                    console.log('Aborting move: source === target');
+                    return;
+                }
+                // Call move handler: source -> target
+                onMealMove?.(
+                    data.sourceDateKey,
+                    data.sourceCategoryId,
+                    dateKey,
+                    categoryId,
+                    data.meal
+                );
+            } else {
+                console.log('DROP (Recipe):', data);
+                // Recipe drop from RecipeBox
+                onRecipeDrop?.(dateKey, categoryId, data);
+            }
+        } catch (err) {
+            console.error('Failed to parse dropped data:', err);
+        }
     };
 
     return (
@@ -80,12 +174,31 @@ const MealPlanGrid = ({ onCellTap, onMealTap }) => {
                         // Check for veto warnings on this cell's meals
                         const vetoNames = cellMeals.length > 0 ? getVetoWarning(cellMeals[0].id) : null;
 
+                        // Check if this cell is currently a drop target
+                        const isDragTarget = dragOverCell === `${cat.id}-${dateKey}`;
+
                         return (
-                            <Paper key={`${cat.id}-${dateKey}`} elevation={0}
+                            <Paper
+                                key={`${cat.id}-${dateKey}`}
+                                elevation={isDragTarget ? 4 : 0}
+                                onDragOver={(e) => handleDragOver(e, dateKey, cat.id)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={(e) => handleDrop(e, dateKey, cat.id)}
                                 sx={{
-                                    borderRadius: 1, minHeight: 80, bgcolor: '#fafafa', position: 'relative',
-                                    border: vetoNames ? '2px solid #ff9800' : '1px solid #f0f0f0'
-                                }}>
+                                    borderRadius: 1,
+                                    minHeight: 80,
+                                    bgcolor: isDragTarget ? 'primary.light' : '#fafafa',
+                                    position: 'relative',
+                                    border: vetoNames
+                                        ? '2px solid #ff9800'
+                                        : isDragTarget
+                                            ? '2px dashed'
+                                            : '1px solid #f0f0f0',
+                                    borderColor: isDragTarget ? 'primary.main' : undefined,
+                                    transition: 'all 0.2s ease',
+                                    transform: isDragTarget ? 'scale(1.02)' : 'none',
+                                }}
+                            >
                                 {/* Veto Warning Icon */}
                                 {vetoNames && (
                                     <Tooltip title={`${vetoNames} dislike${vetoNames.includes(',') ? '' : 's'} this meal`}>
@@ -95,9 +208,14 @@ const MealPlanGrid = ({ onCellTap, onMealTap }) => {
                                         }} />
                                     </Tooltip>
                                 )}
-                                <MealCell meals={cellMeals} categoryColor={cat.color}
+                                <MealCell
+                                    meals={cellMeals}
+                                    categoryColor={cat.color}
+                                    dateKey={dateKey}
+                                    categoryId={cat.id}
                                     onTap={() => cellMeals.length > 0 ? onMealTap?.(cellMeals[0], dateKey, cat.id) : onCellTap?.(dateKey, cat.id)}
-                                    onLongPress={() => onCellTap?.(dateKey, cat.id)} />
+                                    onLongPress={() => onCellTap?.(dateKey, cat.id)}
+                                />
                             </Paper>
                         );
                     })}

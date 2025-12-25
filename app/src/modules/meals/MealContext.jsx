@@ -210,6 +210,63 @@ export default function MealProvider({ children }) {
     };
 
     /**
+     * Moves a meal from one location to another (ATOMIC operation)
+     * 
+     * JUNIOR DEV NOTE: This is an ATOMIC operation - it handles both
+     * the delete and add in a SINGLE STATE UPDATE. This prevents race
+     * conditions that can occur when calling deleteMeal + addMeal separately.
+     * 
+     * WHY ATOMIC?
+     * When you call setMeals twice quickly, React might batch the updates
+     * but each callback only sees the state as it was when queued.
+     * By doing both operations in one callback, we guarantee consistency.
+     * 
+     * @param {string} sourceDateKey - Original date
+     * @param {string} sourceCategoryId - Original category
+     * @param {string} targetDateKey - New date
+     * @param {string} targetCategoryId - New category
+     * @param {Object} meal - The meal to move
+     */
+    const moveMeal = (sourceDateKey, sourceCategoryId, targetDateKey, targetCategoryId, meal) => {
+        console.log('moveMeal called:', { sourceDateKey, sourceCategoryId, targetDateKey, targetCategoryId, mealId: meal.id });
+        setMeals(prev => {
+            // 1. Create a copy of the state
+            const newState = { ...prev };
+
+            // 2. Ensure source date exists
+            if (!newState[sourceDateKey]) {
+                console.warn('Move failed: source date not found');
+                return prev;
+            }
+
+            // 3. Remove meal from source
+            newState[sourceDateKey] = {
+                ...newState[sourceDateKey],
+                [sourceCategoryId]: (newState[sourceDateKey][sourceCategoryId] || []).filter(
+                    m => m.id !== meal.id
+                ),
+            };
+
+            // 4. Ensure target date exists
+            if (!newState[targetDateKey]) {
+                newState[targetDateKey] = {};
+            }
+
+            // 5. Add meal to target
+            newState[targetDateKey] = {
+                ...newState[targetDateKey],
+                [targetCategoryId]: [
+                    ...(newState[targetDateKey][targetCategoryId] || []),
+                    meal,
+                ],
+            };
+
+            console.log('moveMeal state updated');
+            return newState;
+        });
+    };
+
+    /**
      * Gets all meals for a specific date
      * 
      * WHAT IT DOES:
@@ -293,6 +350,7 @@ export default function MealProvider({ children }) {
         addMeal,
         updateMeal,
         deleteMeal,
+        moveMeal,
         getMealsForDate,
 
         // Recipe operations

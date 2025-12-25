@@ -85,10 +85,19 @@ export const OAUTH_SCOPES = [
  * New users need starter data. These provide a good initial experience
  * and demonstrate the app's multi-user capability.
  */
+/**
+ * Default user profiles with parent/child classification
+ * 
+ * JUNIOR DEV NOTE: Why separate parent and child profiles?
+ * - Parents can set PINs to protect settings from accidental changes
+ * - Children profiles won't have PIN access (no accidental lockouts)
+ * - The `isParent` flag determines who can configure the app
+ * - The `pin` field is null until a parent sets their own PIN
+ */
 export const DEFAULT_USERS = [
-    { id: 1, name: 'Mom', color: '#e91e63', avatar: '👩' },
-    { id: 2, name: 'Dad', color: '#2196f3', avatar: '👨' },
-    { id: 3, name: 'Kids', color: '#ff9800', avatar: '👧' },
+    { id: 1, name: 'Mom', color: '#e91e63', avatar: '👩', isParent: true, pin: null },
+    { id: 2, name: 'Dad', color: '#2196f3', avatar: '👨', isParent: true, pin: null },
+    { id: 3, name: 'Kids', color: '#ff9800', avatar: '👧', isParent: false, pin: null },
 ];
 
 // ============================================================================

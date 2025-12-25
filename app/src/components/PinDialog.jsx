@@ -1,16 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, IconButton, Paper } from '@mui/material';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const PinDialog = ({ onSuccess, title = 'Enter PIN' }) => {
+/**
+ * @fileoverview PIN Entry Dialog Component
+ * 
+ * JUNIOR DEV NOTE: This implements a 4-digit PIN pad for protecting settings.
+ * Key feature: Auto-submits when 4 digits are entered (no "Unlock" tap needed).
+ * 
+ * WHY AUTO-SUBMIT?
+ * On a family kiosk, fewer taps = less frustration. When the user enters
+ * their 4th digit, we immediately verify - providing instant feedback.
+ */
+const PinDialog = ({ onSuccess, title = 'Enter PIN', autoSubmit = true }) => {
     const [pin, setPin] = useState('');
     const [error, setError] = useState(false);
 
+    /**
+     * Handle PIN auto-submission when 4 digits are reached
+     * 
+     * JUNIOR DEV NOTE: We use useEffect instead of checking in handleDigit
+     * because React state updates are asynchronous. By reacting to `pin`
+     * changes, we ensure we have the actual 4-digit value.
+     */
+    useEffect(() => {
+        if (autoSubmit && pin.length === 4) {
+            const success = onSuccess(pin);
+            if (!success) {
+                setError(true);
+                setPin('');
+            }
+        }
+    }, [pin, autoSubmit, onSuccess]);
+
     const handleDigit = (digit) => {
         if (pin.length < 4) {
-            const newPin = pin + digit;
-            setPin(newPin);
+            setPin(prev => prev + digit);
             setError(false);
         }
     };

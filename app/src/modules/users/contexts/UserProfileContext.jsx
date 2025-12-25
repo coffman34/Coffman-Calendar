@@ -27,13 +27,21 @@ import { UserProfileContext } from './UserProfileContextCore';
  * @param {React.ReactNode} props.children
  */
 export function UserProfileProvider({ children }) {
-    // 1. Initialize State
-    // JUNIOR DEV NOTE: We check for both null AND empty array
-    // because `[] || DEFAULT` won't work - empty array is truthy!
+    // 1. Initialize State with Migration Logic
+    // JUNIOR DEV NOTE: Older profiles may not have `isParent` or `pin` fields.
+    // We inject defaults to ensure backwards compatibility.
+    const migrateProfile = (user) => ({
+        ...user,
+        isParent: user.isParent ?? false,  // Default to child if missing
+        pin: user.pin ?? null,             // Default to no PIN
+    });
+
     const [users, setUsers] = useState(() => {
         const stored = getUsersFromStorage();
         // If storage returned null/undefined OR an empty array, use defaults
-        return (stored && stored.length > 0) ? stored : DEFAULT_USERS;
+        const effectiveUsers = (stored && stored.length > 0) ? stored : DEFAULT_USERS;
+        // Migrate all users to ensure they have new fields
+        return effectiveUsers.map(migrateProfile);
     });
 
     const [currentUser, setCurrentUser] = useState(() => {
@@ -41,15 +49,23 @@ export function UserProfileProvider({ children }) {
         // Get the user list (same logic as above for safety)
         const userList = getUsersFromStorage();
         const effectiveUsers = (userList && userList.length > 0) ? userList : DEFAULT_USERS;
+        // Migrate users before selecting
+        const migratedUsers = effectiveUsers.map(migrateProfile);
 
-        if (!storedId) return effectiveUsers[0];
-        const foundUser = effectiveUsers.find(u => u.id === Number(storedId));
-        return foundUser || effectiveUsers[0];
+        if (!storedId) return migratedUsers[0];
+        const foundUser = migratedUsers.find(u => u.id === Number(storedId));
+        return foundUser || migratedUsers[0];
     });
 
     // 2. Operations (Wrapped in useCallback)
 
-    const addUser = useCallback((name, color, avatar) => {
+    /**
+     * Add a new user profile
+     * 
+     * JUNIOR DEV NOTE: We now accept `isParent` to distinguish between
+     * parent accounts (can set PIN) and child accounts (no PIN access).
+     */
+    const addUser = useCallback((name, color, avatar, isParent = false) => {
         const validation = validateUserName(name);
         if (!validation.valid) {
             console.error('Invalid user name:', validation.error);
@@ -61,6 +77,8 @@ export function UserProfileProvider({ children }) {
             name: name.trim(),
             color: color || '#9e9e9e',
             avatar: avatar || '👤',
+            isParent,              // Parent or child profile
+            pin: null,             // PIN is set later via setUserPin
         };
 
         setUsers(prev => [...prev, newUser]);
@@ -92,6 +110,46 @@ export function UserProfileProvider({ children }) {
         return users.find(u => u.id === userId) || null;
     }, [users]);
 
+    /**
+     * Set a PIN for a specific user (parent accounts only)
+     * 
+     * JUNIOR DEV NOTE: This validates the PIN format (exactly 4 digits)
+     * and only allows setting on parent accounts to prevent children
+     * from accidentally locking out the family.
+     */
+    const setUserPin = useCallback((userId, newPin) => {
+        // 1. Validate PIN format (must be exactly 4 digits)
+        if (!newPin || newPin.length !== 4 || !/^\d+$/.test(newPin)) {
+            console.error('Invalid PIN format: must be exactly 4 digits');
+            return false;
+        }
+
+        // 2. Find the user and verify they are a parent
+        const user = users.find(u => u.id === userId);
+        if (!user) {
+            console.error('User not found:', userId);
+            return false;
+        }
+        if (!user.isParent) {
+            console.error('Cannot set PIN on child account');
+            return false;
+        }
+
+        // 3. Update the user's PIN
+        updateUser(userId, { pin: newPin });
+        return true;
+    }, [users, updateUser]);
+
+    /**
+     * Get all parent users (for PIN verification)
+     * 
+     * JUNIOR DEV NOTE: Used by PinContext to check if entered PIN
+     * matches ANY parent's PIN - allowing shared access to settings.
+     */
+    const getParentUsers = useCallback(() => {
+        return users.filter(u => u.isParent);
+    }, [users]);
+
     // 3. Persistence Effects
     useEffect(() => { setUsersInStorage(users); }, [users]);
     useEffect(() => {
@@ -107,6 +165,8 @@ export function UserProfileProvider({ children }) {
         updateUser,
         deleteUser,
         getUserById,
+        setUserPin,       // NEW: Per-user PIN management
+        getParentUsers,   // NEW: Get parent accounts for PIN verification
     };
 
     return (
