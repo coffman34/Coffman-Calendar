@@ -15,6 +15,7 @@ import dataRoutes from './routes/dataRoutes.js';
 import systemRoutes from './routes/systemRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import recipeRoutes from './routes/recipes.js';
+import weatherRoutes from './routes/weatherRoutes.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +55,7 @@ app.use('/api/data', dataRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
+app.use('/api/weather', weatherRoutes);
 
 
 // ===== ERROR HANDLING =====

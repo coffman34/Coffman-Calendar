@@ -180,3 +180,29 @@ export const PLATFORM_CONFIG = {
     DISABLE_CONTEXT_MENU: true, // Prevent right-click menu on kiosk
     ENABLE_HARDWARE_ACCELERATION: true,
 };
+
+// ============================================================================
+// WEATHER CONFIGURATION
+// ============================================================================
+/**
+ * Open-Meteo API configuration for real-time weather
+ * 
+ * JUNIOR DEV NOTE: Why Open-Meteo?
+ * It's free for non-commercial use and requires no API key.
+ * This makes the kiosk "ready to run" without configuration.
+ * 
+ * WHY DEFAULT COORDINATES?
+ * navigator.geolocation can trigger permission popups that are
+ * difficult to interact with on a locked-down kiosk. We fallback
+ * to a sensible default (Danville, IL) if geolocation fails.
+ */
+export const WEATHER_CONFIG = {
+    BASE_URL: 'https://api.open-meteo.com/v1/forecast',
+    DEFAULT_LOCATION: {
+        lat: 40.1245,
+        lon: -87.6300,
+        name: 'Danville, IL'
+    },
+    REFRESH_INTERVAL: 30 * 60 * 1000, // 30 minutes in ms
+    CACHE_DURATION: 15 * 60 * 1000,   // Backend cache duration (15 min)
+};

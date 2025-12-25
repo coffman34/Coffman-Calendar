@@ -73,7 +73,7 @@ export const parseStepsFromInstructions = (instructions) => {
 
     // Convert strings to objects
     return steps.map((text, index) => ({
-        id: `step-${Date.now()}-${index}`,
+        id: `step-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
         text,
         ingredientIds: []
     }));

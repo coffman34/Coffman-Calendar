@@ -4,6 +4,7 @@ import { format, isSameDay } from 'date-fns';
 import AddIcon from '@mui/icons-material/Add';
 import EventCard from './EventCard';
 import MealSection from './MealSection';
+import WeatherSection from './WeatherSection';
 import EventDetailPopup from './EventDetailPopup';
 
 const DayColumn = ({ day, events, onAddEvent, onEditEvent, onDeleteEvent }) => {
@@ -65,11 +66,8 @@ const DayColumn = ({ day, events, onAddEvent, onEditEvent, onDeleteEvent }) => {
                 ))}
             </Box>
 
-            {/* Add Event */}
-            <Box sx={{ p: 1, borderTop: '1px solid #eee', textAlign: 'center' }}>
-                <IconButton size="small" color="primary" onClick={() => onAddEvent(day)}><AddIcon fontSize="small" /></IconButton>
-                <Typography variant="caption" display="block" color="text.secondary">Add Event</Typography>
-            </Box>
+            {/* Weather Forecast at bottom */}
+            <WeatherSection day={dateKey} />
 
             {/* Event Detail Popup */}
             <EventDetailPopup event={selectedEvent} open={!!selectedEvent} onClose={() => setSelectedEvent(null)}

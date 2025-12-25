@@ -42,7 +42,6 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
     const [steps, setSteps] = useState([]); // New structured steps state
     const [ingredients, setIngredients] = useState([]);
     const [youtubeUrl, setYoutubeUrl] = useState('');
-    const [saveToRecipes, setSaveToRecipes] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Defensive UX
@@ -117,7 +116,9 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
             addMeal(date, categoryId, mealData);
         }
 
-        if (saveToRecipes && tab === 1) {
+        // Always save to recipes as per user request (Recipe Box serves as the database)
+        // Only save if we are in "New Entry" mode (tab 1) or edited a manual entry
+        if (tab === 1 || !selectedRecipe) {
             saveRecipe({ ...mealData, categoryId });
         }
 
@@ -127,7 +128,7 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
 
     const resetAndClose = () => {
         setTab(0); setSelectedRecipe(null); setName(''); setInstructions('');
-        setIngredients([]); setYoutubeUrl(''); setSaveToRecipes(false);
+        setIngredients([]); setYoutubeUrl('');
         setFilterCat(null); setShowAdvanced(false);
         onClose();
     };
@@ -183,15 +184,23 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
                         <TextField fullWidth label="Meal Name" value={name}
                             onChange={e => setName(e.target.value)} sx={{ mb: 2 }} />
 
-                        {/* Ingredients Input */}
-                        <Box sx={{ mb: 2 }}>
-                            <IngredientInput value={ingredients} onChange={setIngredients} />
-                        </Box>
+                        {/* Ingredients Input: Only show if NOT using steps, or make read-only? 
+                           User requested "Only input ingredients in the step". 
+                           So we hide this inputs block if we are using steps workflow. 
+                           Actually, just hiding it simplifies the UI as requested. 
+                           We can show a read-only summary if needed, but let's stick to user request.
+                        */}
+                        {steps.length === 0 && (
+                            <Box sx={{ mb: 2 }}>
+                                <IngredientInput value={ingredients} onChange={setIngredients} />
+                            </Box>
+                        )}
 
                         <StepInput
                             steps={steps}
                             ingredients={ingredients}
                             onChange={setSteps}
+                            onIngredientsChange={setIngredients}
                         />
 
                         {/* Synchronization Note */}
@@ -232,12 +241,7 @@ const AddMealDialog = ({ open, onClose, initialDate, initialCategory, initialMea
                     </TextField>
                 </Box>
 
-                {tab === 1 && (
-                    <FormControlLabel
-                        control={<Switch checked={saveToRecipes} onChange={e => setSaveToRecipes(e.target.checked)} />}
-                        label="Save to Recipe Box"
-                    />
-                )}
+
             </DialogContent>
 
             <DialogActions sx={{ p: 2, gap: 1 }}>

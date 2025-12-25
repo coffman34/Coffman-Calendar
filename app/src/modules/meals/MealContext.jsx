@@ -86,8 +86,14 @@ export default function MealProvider({ children }) {
      * scheduled for specific dates. Think of recipes as the "master copy".
      */
     const [recipes, setRecipes] = useState(() => {
-        const stored = localStorage.getItem(STORAGE_KEYS.RECIPES);
-        return stored ? JSON.parse(stored) : [];
+        try {
+            const stored = localStorage.getItem(STORAGE_KEYS.RECIPES);
+            const parsed = stored ? JSON.parse(stored) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            console.error("Failed to parse recipes:", e);
+            return [];
+        }
     });
 
     // ========================================================================
@@ -255,10 +261,14 @@ export default function MealProvider({ children }) {
             id: recipe.id || Date.now().toString(),
         };
 
-        setRecipes(prev => [
-            ...prev.filter(r => r.id !== newRecipe.id), // Remove old version if exists
-            newRecipe, // Add new version
-        ]);
+        setRecipes(prev => {
+            // Defensive: ensure prev is an array
+            const safePrev = Array.isArray(prev) ? prev : [];
+            return [
+                ...safePrev.filter(r => r.id !== newRecipe.id), // Remove old version if exists
+                newRecipe, // Add new version
+            ];
+        });
     };
 
     /**

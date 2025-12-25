@@ -191,30 +191,58 @@ const CookMode = ({ open, onClose, recipe }) => {
                 </Typography>
 
                 {/* Linked Ingredients Display */}
-                {typeof steps[currentStep] === 'object' && steps[currentStep].ingredientIds?.length > 0 && (
-                    <Box sx={{
-                        display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center',
-                        opacity: 0.9, animation: 'fadeIn 0.5s ease-in'
-                    }}>
-                        {steps[currentStep].ingredientIds.map(ingId => {
-                            const ing = recipe.ingredients?.find(i => i.id === ingId);
-                            if (!ing) return null;
-                            return (
-                                <Box key={ingId} sx={{
+                {/* JUNIOR DEV NOTE: Debugging Logic for visibility */}
+                {(() => {
+                    const step = steps[currentStep];
+                    if (typeof step !== 'object' || !step.ingredientIds?.length) return null;
+
+                    // Log for debugging
+                    console.group(`CookMode Step ${currentStep + 1} Debug`);
+                    console.log('Step Data:', step);
+                    console.log('Recipe Ingredients:', recipe.ingredients);
+
+                    const ingredientsToRender = step.ingredientIds.map(ingId => {
+                        // Loose equality check for ID safety (string vs number)
+                        const ing = recipe.ingredients?.find(i => i.id == ingId);
+                        if (!ing) {
+                            console.warn(`Missing ingredient for ID: ${ingId}`);
+                            return null;
+                        }
+                        return ing;
+                    }).filter(Boolean);
+
+                    console.log('Resolved Ingredients:', ingredientsToRender);
+                    console.groupEnd();
+
+                    if (ingredientsToRender.length === 0) return null;
+
+                    return (
+                        <Box sx={{
+                            display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center',
+                            opacity: 1, // Force opacity 1 just in case
+                            animation: 'fadeIn 0.5s ease-in',
+                            '@keyframes fadeIn': {
+                                '0%': { opacity: 0, transform: 'translateY(10px)' },
+                                '100%': { opacity: 1, transform: 'translateY(0)' }
+                            }
+                        }}>
+                            {ingredientsToRender.map(ing => (
+                                <Box key={ing.id} sx={{
                                     bgcolor: 'rgba(0, 217, 255, 0.15)', border: '1px solid rgba(0, 217, 255, 0.3)',
-                                    borderRadius: 4, px: 3, py: 1, display: 'flex', alignItems: 'center', gap: 1
+                                    borderRadius: 4, px: 3, py: 1, display: 'flex', alignItems: 'center', gap: 1,
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                                 }}>
                                     <Typography variant="h6" fontWeight="bold" color="#00d9ff">
                                         {ing.amount} {ing.unit}
                                     </Typography>
-                                    <Typography variant="h6" color="#eee">
+                                    <Typography variant="h6" color="#ffffff">
                                         {ing.name}
                                     </Typography>
                                 </Box>
-                            );
-                        })}
-                    </Box>
-                )}
+                            ))}
+                        </Box>
+                    );
+                })()}
             </Box>
 
             {/* Timer Display */}
